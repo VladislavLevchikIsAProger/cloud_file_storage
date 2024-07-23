@@ -1,0 +1,7 @@
+spring.application.name: cloud_file_storage
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: vlad
+    password: vlad
