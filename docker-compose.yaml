@@ -10,3 +10,9 @@ services:
       POSTGRES_PASSWORD: vlad
     ports:
       - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: cloud_file_storage_redis
+    ports:
+      - "6379:6379"
