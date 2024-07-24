@@ -11,9 +11,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class UserResponseDto {
+
     private Integer id;
 
     private String username;
 
     private String password;
+
 }
