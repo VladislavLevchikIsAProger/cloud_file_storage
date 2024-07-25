@@ -1,9 +1,9 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
-import com.vladislavlevchik.cloud_file_storage.dto.UserRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.UserLoginRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
-import com.vladislavlevchik.cloud_file_storage.exception.UserAlreadyExistsException;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -23,25 +23,18 @@ public class AuthService {
     private final ModelMapper mapper;
     private final PasswordEncoder encoder;
 
-    public void signIn(UserRequestDto userRequestDto){
+    public void signIn(UserLoginRequestDto userLoginRequestDto){
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userRequestDto.getUsername(), userRequestDto.getPassword())
+                new UsernamePasswordAuthenticationToken(userLoginRequestDto.getUsername(), userLoginRequestDto.getPassword())
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
-    //TODO мб сделать одним запросом, через запрос к бд на сохранение
-    public UserResponseDto registerUser(UserRequestDto userRequestDto) {
-        repository.findByUsername(userRequestDto.getUsername())
-                .ifPresent(user -> {
-                    throw new UserAlreadyExistsException("User with username " + userRequestDto.getUsername() + " already exists");
-                });
+    public UserResponseDto registerUser(UserRegisterRequestDto userRegisterRequestDto) {
+        userRegisterRequestDto.setPassword(encoder.encode(userRegisterRequestDto.getPassword()));
 
-
-        userRequestDto.setPassword(encoder.encode(userRequestDto.getPassword()));
-
-        User user = repository.save(mapper.map(userRequestDto, User.class));
+        User user = repository.save(mapper.map(userRegisterRequestDto, User.class));
 
         return mapper.map(user, UserResponseDto.class);
     }
