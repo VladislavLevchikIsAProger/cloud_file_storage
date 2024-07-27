@@ -4,6 +4,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.MessageDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserLoginRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,20 +18,20 @@ public class AuthController {
     private final AuthService service;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody @Validated UserLoginRequestDto userLoginRequestDto) {
-        service.signIn(userLoginRequestDto);
+    public ResponseEntity<?> login(@RequestBody @Validated UserLoginRequestDto user, HttpServletRequest request) {
+        service.signIn(user, request);
 
         return ResponseEntity.ok(MessageDto.builder()
-                .message("User " + userLoginRequestDto.getUsername() + " logged in successfully!")
+                .message("User " + user.getUsername() + " logged in successfully!")
                 .build()
         );
     }
 
     //TODO мб вернуть message а не объект
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Validated UserRegisterRequestDto userRegisterRequestDto) {
+    public ResponseEntity<?> register(@RequestBody @Validated UserRegisterRequestDto user) {
 
-        return ResponseEntity.ok(service.registerUser(userRegisterRequestDto));
+        return ResponseEntity.ok(service.registerUser(user));
     }
 
 }
