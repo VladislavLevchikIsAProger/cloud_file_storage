@@ -5,6 +5,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,12 +24,14 @@ public class AuthService {
     private final ModelMapper mapper;
     private final PasswordEncoder encoder;
 
-    public void signIn(UserLoginRequestDto userLoginRequestDto){
+    public void signIn(UserLoginRequestDto userLoginRequestDto, HttpServletRequest request){
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userLoginRequestDto.getUsername(), userLoginRequestDto.getPassword())
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        request.getSession(true);
     }
 
     public UserResponseDto registerUser(UserRegisterRequestDto userRegisterRequestDto) {
