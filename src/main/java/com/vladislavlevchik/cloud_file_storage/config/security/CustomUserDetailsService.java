@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.service;
+package com.vladislavlevchik.cloud_file_storage.config.security;
 
 import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
