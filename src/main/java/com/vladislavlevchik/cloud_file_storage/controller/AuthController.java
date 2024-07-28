@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,11 +45,15 @@ public class AuthController {
     public ResponseEntity<?> getAuthStatus() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
+        boolean isAuthenticated = authentication.isAuthenticated();
 
-        return ResponseEntity.ok(MessageDto.builder()
-                .message("authenticated: " + isAuthenticated)
-                .build()
-        );
+        Map<String, Object> response = new HashMap<>();
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        response.put("authenticated", isAuthenticated);
+        response.put("username", userDetails.getUsername());
+
+        return ResponseEntity.ok(response);
     }
 }
