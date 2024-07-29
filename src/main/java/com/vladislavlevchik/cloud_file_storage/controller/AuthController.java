@@ -42,17 +42,7 @@ public class AuthController {
 
     @GetMapping("/status")
     public ResponseEntity<?> getAuthStatus() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        boolean isAuthenticated = authentication.isAuthenticated();
-
-        Map<String, Object> response = new HashMap<>();
-
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-        response.put("authenticated", isAuthenticated);
-        response.put("username", userDetails.getUsername());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(service.checkStatus());
     }
 }

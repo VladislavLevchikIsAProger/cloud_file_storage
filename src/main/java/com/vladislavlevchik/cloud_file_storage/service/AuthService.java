@@ -13,10 +13,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -28,7 +30,7 @@ public class AuthService {
     private final ModelMapper mapper;
     private final PasswordEncoder encoder;
 
-    public void signIn(UserLoginRequestDto userLoginRequestDto, HttpServletRequest request){
+    public void signIn(UserLoginRequestDto userLoginRequestDto, HttpServletRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userLoginRequestDto.getUsername(), userLoginRequestDto.getPassword())
         );
@@ -45,6 +47,21 @@ public class AuthService {
         User user = repository.save(mapper.map(userRegisterRequestDto, User.class));
 
         return mapper.map(user, UserResponseDto.class);
+    }
+
+    public Map<String, Object> checkStatus(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        boolean isAuthenticated = authentication.isAuthenticated();
+
+        Map<String, Object> response = new HashMap<>();
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        response.put("authenticated", isAuthenticated);
+        response.put("username", userDetails.getUsername());
+
+        return response;
     }
 
 }
