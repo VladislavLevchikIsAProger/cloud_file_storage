@@ -26,3 +26,5 @@ minio:
   credentials:
     user: cloudfilestorage
     password: cloudfilestorage
+  bucket:
+    name: disk
