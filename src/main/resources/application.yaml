@@ -20,3 +20,9 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
+
+minio:
+  url: http://localhost:9000
+  credentials:
+    user: cloudfilestorage
+    password: cloudfilestorage
