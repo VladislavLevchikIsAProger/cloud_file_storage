@@ -2,7 +2,6 @@ package com.vladislavlevchik.cloud_file_storage.service;
 
 import com.vladislavlevchik.cloud_file_storage.dto.UserLoginRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.UserResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,12 +40,10 @@ public class AuthService {
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
     }
 
-    public UserResponseDto registerUser(UserRegisterRequestDto userRegisterRequestDto) {
+    public void registerUser(UserRegisterRequestDto userRegisterRequestDto) {
         userRegisterRequestDto.setPassword(encoder.encode(userRegisterRequestDto.getPassword()));
 
-        User user = repository.save(mapper.map(userRegisterRequestDto, User.class));
-
-        return mapper.map(user, UserResponseDto.class);
+        repository.save(mapper.map(userRegisterRequestDto, User.class));
     }
 
     public Map<String, Object> checkStatus(){
