@@ -28,3 +28,5 @@ minio:
     password: cloudfilestorage
   bucket:
     name: disk
+  user:
+    memory: 500
