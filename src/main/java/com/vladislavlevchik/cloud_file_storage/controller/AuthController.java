@@ -22,7 +22,7 @@ public class AuthController {
         service.signIn(user, request);
 
         return ResponseEntity.ok(MessageDto.builder()
-                .message("User " + user.getUsername() + " logged in successfully!")
+                .message(user.getUsername())
                 .build()
         );
     }
