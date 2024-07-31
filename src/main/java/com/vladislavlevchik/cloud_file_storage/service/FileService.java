@@ -19,7 +19,6 @@ public class FileService {
 
     private final MinioClient minioClient;
     private final String bucketName;
-
     private final int userMemory;
 
     public FileService(MinioClient minioClient,
