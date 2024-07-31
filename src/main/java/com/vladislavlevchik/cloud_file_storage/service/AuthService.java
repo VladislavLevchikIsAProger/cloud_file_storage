@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
+import com.vladislavlevchik.cloud_file_storage.dto.StatusResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserLoginRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
@@ -16,9 +17,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -46,19 +44,17 @@ public class AuthService {
         repository.save(mapper.map(userRegisterRequestDto, User.class));
     }
 
-    public Map<String, Object> checkStatus(){
+    public StatusResponseDto checkStatus(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         boolean isAuthenticated = authentication.isAuthenticated();
 
-        Map<String, Object> response = new HashMap<>();
-
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        response.put("authenticated", isAuthenticated);
-        response.put("username", userDetails.getUsername());
-
-        return response;
+        return StatusResponseDto.builder()
+                .authenticated(isAuthenticated)
+                .username(userDetails.getUsername())
+                .build();
     }
 
 }
