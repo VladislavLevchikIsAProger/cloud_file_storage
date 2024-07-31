@@ -6,6 +6,7 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.Result;
 import io.minio.messages.Item;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,19 +16,14 @@ import static java.math.BigDecimal.valueOf;
 import static java.math.RoundingMode.HALF_UP;
 
 @Service
+@RequiredArgsConstructor
 public class FileService {
 
     private final MinioClient minioClient;
+    @Value("${minio.bucket.name}")
     private final String bucketName;
+    @Value("${minio.user.memory}")
     private final int userMemory;
-
-    public FileService(MinioClient minioClient,
-                       @Value("${minio.bucket.name}") String bucketName,
-                       @Value("${minio.user.memory}") int userMemory) {
-        this.minioClient = minioClient;
-        this.bucketName = bucketName;
-        this.userMemory = userMemory;
-    }
 
     //TODO потом надо нормально работу с ошибками обработать
     @SneakyThrows
@@ -63,7 +59,7 @@ public class FileService {
         }
 
         return MemoryResponseDto.builder()
-                .totalSize(valueOf(totalSize / (1024.0)).setScale(2, HALF_UP))
+                .totalSize(valueOf(totalSize / (1024.0 * 1000)).setScale(2, HALF_UP))
                 .userMemory(userMemory)
                 .build();
     }
