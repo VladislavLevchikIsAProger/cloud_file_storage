@@ -26,9 +26,14 @@ public class FileService {
     private final int userMemory;
 
     //TODO потом надо нормально работу с ошибками обработать
+    //TODO мб у нас не будет загрузки сразу в папку, поэтому мб придется без path делать
     @SneakyThrows
     public void uploadFile(String username, String path, MultipartFile file) {
-        String fileKey = "user-" + username + "/" + path + "/" + file.getOriginalFilename();
+        if (path == null || path.trim().isEmpty()) {
+            path = "";
+        }
+
+        String fileKey = "user-" + username + path + "/" + file.getOriginalFilename();
 
         minioClient.putObject(PutObjectArgs.builder()
                 .bucket(bucketName)

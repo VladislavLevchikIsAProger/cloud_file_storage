@@ -20,7 +20,8 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(@RequestPart("file") MultipartFile file,
                                         @RequestPart("user") String username,
-                                        @RequestPart("folderPath") String path) {
+                                        @RequestPart(value = "folderPath", required = false) String path) {
+
         service.uploadFile(username, path, file);
 
         return ResponseEntity.ok(MessageDto.builder().message("File uploaded successfully").build());
