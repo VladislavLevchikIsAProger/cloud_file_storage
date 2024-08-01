@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.math.BigDecimal.valueOf;
 import static java.math.RoundingMode.HALF_UP;
@@ -44,13 +45,7 @@ public class FileService {
 
         long totalSize = 0;
 
-        Iterable<Result<Item>> results = minioClient.listObjects(
-                ListObjectsArgs.builder()
-                        .bucket(bucketName)
-                        .prefix(folderPrefix)
-                        .recursive(true)
-                        .build()
-        );
+        Iterable<Result<Item>> results = recursivelyTraverseFolders(folderPrefix);
 
         for (Result<Item> result : results) {
             Item item = result.get();
@@ -63,17 +58,23 @@ public class FileService {
                 .build();
     }
 
-    //TODO тоже с ексепшенами поработать
     @SneakyThrows
-    public void createDefaultPackages(String username) {
-        String folderName = "user-" + username;
+    public List<String> getAllFiles(String username) {
+        String folderPrefix = "user-" + username + "/";
 
-        minioClient.putObject(PutObjectArgs.builder()
-                .bucket(bucketName)
-                .object(folderName)
-                .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
-                .build());
+        Iterable<Result<Item>> results = recursivelyTraverseFolders(folderPrefix);
+
+        List<String> files = new ArrayList<>();
+
+        for (Result<Item> result : results) {
+            Item item = result.get();
+            String fileName = item.objectName();
+            files.add(fileName.substring(fileName.lastIndexOf('/') + 1));
+        }
+
+        return files;
     }
+
     @SneakyThrows
     public void moveToPackage(String sourceObject, String targetObject) {
         minioClient.copyObject(CopyObjectArgs.builder()
@@ -89,5 +90,15 @@ public class FileService {
                 .bucket(bucketName)
                 .object(sourceObject)
                 .build());
+    }
+
+    private Iterable<Result<Item>> recursivelyTraverseFolders(String folderPrefix) {
+        return minioClient.listObjects(
+                ListObjectsArgs.builder()
+                        .bucket(bucketName)
+                        .prefix(folderPrefix)
+                        .recursive(true)
+                        .build()
+        );
     }
 }
