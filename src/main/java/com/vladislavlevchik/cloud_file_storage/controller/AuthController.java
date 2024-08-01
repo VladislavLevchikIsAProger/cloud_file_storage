@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final FileService fileService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Validated UserLoginRequestDto user, HttpServletRequest request) {
@@ -32,8 +31,6 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Validated UserRegisterRequestDto user) {
         authService.registerUser(user);
-
-        fileService.createDefaultPackages(user.getUsername());
 
         return ResponseEntity.ok(MessageDto.builder()
                 .message("User " + user.getUsername() + " successfully registered!")
