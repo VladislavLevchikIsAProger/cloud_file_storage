@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MoveFileRequest {
+public class MoveFileRequestDto {
 
     private String sourceFolder;
     private String targetFolder;
