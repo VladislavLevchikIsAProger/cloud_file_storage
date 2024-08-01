@@ -66,12 +66,28 @@ public class FileService {
     //TODO тоже с ексепшенами поработать
     @SneakyThrows
     public void createDefaultPackages(String username) {
-        String folderName = "user-" + username + "/deleted/";
+        String folderName = "user-" + username;
 
         minioClient.putObject(PutObjectArgs.builder()
                 .bucket(bucketName)
                 .object(folderName)
                 .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
+                .build());
+    }
+    @SneakyThrows
+    public void moveToPackage(String sourceObject, String targetObject) {
+        minioClient.copyObject(CopyObjectArgs.builder()
+                .bucket(bucketName)
+                .object(targetObject)
+                .source(CopySource.builder()
+                        .bucket(bucketName)
+                        .object(sourceObject)
+                        .build())
+                .build());
+
+        minioClient.removeObject(RemoveObjectArgs.builder()
+                .bucket(bucketName)
+                .object(sourceObject)
                 .build());
     }
 }
