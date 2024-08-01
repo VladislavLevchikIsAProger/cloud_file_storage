@@ -4,6 +4,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.MessageDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserLoginRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.service.AuthService;
+import com.vladislavlevchik.cloud_file_storage.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +16,12 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService service;
+    private final AuthService authService;
+    private final FileService fileService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Validated UserLoginRequestDto user, HttpServletRequest request) {
-        service.signIn(user, request);
+        authService.signIn(user, request);
 
         return ResponseEntity.ok(MessageDto.builder()
                 .message(user.getUsername())
@@ -29,7 +31,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Validated UserRegisterRequestDto user) {
-        service.registerUser(user);
+        authService.registerUser(user);
+
+        fileService.createDefaultPackages(user.getUsername());
 
         return ResponseEntity.ok(MessageDto.builder()
                 .message("User " + user.getUsername() + " successfully registered!")
@@ -40,6 +44,6 @@ public class AuthController {
     @GetMapping("/status")
     public ResponseEntity<?> getAuthStatus() {
 
-        return ResponseEntity.ok(service.checkStatus());
+        return ResponseEntity.ok(authService.checkStatus());
     }
 }
