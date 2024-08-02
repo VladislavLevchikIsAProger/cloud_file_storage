@@ -2,9 +2,7 @@ package com.vladislavlevchik.cloud_file_storage.controller;
 
 import com.vladislavlevchik.cloud_file_storage.dto.MessageDto;
 import com.vladislavlevchik.cloud_file_storage.dto.UserLoginRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.service.AuthService;
-import com.vladislavlevchik.cloud_file_storage.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,17 +26,7 @@ public class AuthController {
         );
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Validated UserRegisterRequestDto user) {
-        authService.registerUser(user);
-
-        return ResponseEntity.ok(MessageDto.builder()
-                .message("User " + user.getUsername() + " successfully registered!")
-                .build()
-        );
-    }
-
-    @GetMapping("/status")
+    @GetMapping("/me")
     public ResponseEntity<?> getAuthStatus() {
 
         return ResponseEntity.ok(authService.checkStatus());

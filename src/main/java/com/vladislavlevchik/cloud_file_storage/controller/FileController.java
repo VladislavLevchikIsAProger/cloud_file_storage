@@ -12,12 +12,12 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/file")
+@RequestMapping("/api/v1")
 public class FileController {
 
     private final FileService service;
 
-    @PostMapping("/upload")
+    @PostMapping("/file/upload")
     public ResponseEntity<?> uploadFile(@RequestPart("file") MultipartFile file,
                                         @RequestPart("user") String username,
                                         @RequestPart(value = "folderPath", required = false) String path) {
@@ -27,12 +27,12 @@ public class FileController {
         return ResponseEntity.ok(MessageDto.builder().message("File uploaded successfully").build());
     }
 
-    @GetMapping("/memory/{username}")
+    @GetMapping("/files/memory/{username}")
     public ResponseEntity<?> userMemoryInfo(@PathVariable String username) {
         return ResponseEntity.ok(service.getMemoryInfo(username));
     }
 
-    @PostMapping("/move")
+    @PostMapping("/file/move")
     public ResponseEntity<?> moveFile(@RequestBody MoveFileRequestDto request) {
         service.moveToPackage(
                 "user-" + request.getUsername() + request.getSourceFolder() + "/" + request.getFileName(),
@@ -41,7 +41,7 @@ public class FileController {
         return ResponseEntity.ok(MessageDto.builder().message("The file has been successfully moved").build());
     }
 
-    @PostMapping("/delete")
+    @PostMapping("/file/delete")
     public ResponseEntity<?> moveToDeleted(@RequestBody MoveFileRequestDto request) {
         service.moveToPackage(
                 "user-" + request.getUsername() + request.getSourceFolder() + "/" + request.getFileName(),
@@ -51,7 +51,7 @@ public class FileController {
         return ResponseEntity.ok(MessageDto.builder().message("The file has been successfully moved to deleted").build());
     }
 
-    @GetMapping("/user/{username}")
+    @GetMapping("/files/user/{username}")
     public ResponseEntity<?> getAllFilesName(@PathVariable String username) {
         List<String> allFiles = service.getAllFiles(username);
 
