@@ -13,5 +13,6 @@ public class FileResponseDto {
 
     private String filename;
     private String filePath;
+    private String size;
 
 }

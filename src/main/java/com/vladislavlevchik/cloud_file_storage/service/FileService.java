@@ -114,12 +114,41 @@ public class FileService {
 
             String objectName = item.objectName();
 
+            String formattedSize = convertBytesToMbOrKb(item.size());
+
             if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + "/deleted")) {
                 fileList.add(FileResponseDto.builder()
                         .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                        .filePath(getDirectory(objectName))
+                        .filePath(getSubdirectories(objectName))
+                        .size(formattedSize)
                         .build());
             }
+
+        }
+
+        return fileList;
+    }
+
+    @SneakyThrows
+    public List<FileResponseDto> listFilesInDeleted(String username) {
+        List<FileResponseDto> fileList = new ArrayList<>();
+
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted";
+
+        Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
+
+        for (Result<Item> itemResult : objects) {
+            Item item = itemResult.get();
+
+            String objectName = item.objectName();
+
+            String formattedSize = convertBytesToMbOrKb(item.size());
+
+            fileList.add(FileResponseDto.builder()
+                    .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
+                    .filePath(getSubdirectories(objectName))
+                    .size(formattedSize)
+                    .build());
 
         }
 
@@ -141,12 +170,31 @@ public class FileService {
      * Extracts the base directory from a full path by removing the initial part and retaining only the directory.
      *
      * @param fullPath The full path to the file or directory, e.g., "user-Vlad/files/png/award-yel.png".
-     * @return The base directory "files/png/".
+     * @return The base directory, e.g., "files/png/".
      */
-    private String getDirectory(String fullPath) {
+    private String getSubdirectories(String fullPath) {
         fullPath = fullPath.replaceFirst("^[^/]+/", "");
+
+
+        if (fullPath.startsWith("deleted/")) {
+            fullPath = fullPath.substring("deleted/".length());
+        }
+
         int lastSlashIndex = fullPath.lastIndexOf('/');
         return (lastSlashIndex == -1) ? "" : fullPath.substring(0, lastSlashIndex + 1);
     }
 
+    private String convertBytesToMbOrKb(long sizeInBytes) {
+        String formattedSize;
+
+        if (sizeInBytes >= 1_048_576) {
+            double sizeInMB = sizeInBytes / 1_048_576.0;
+            formattedSize = String.format("%.2fMB", sizeInMB);
+        } else {
+            double sizeInKB = sizeInBytes / 1_024.0;
+            formattedSize = String.format("%.2fKB", sizeInKB);
+        }
+
+        return formattedSize;
+    }
 }

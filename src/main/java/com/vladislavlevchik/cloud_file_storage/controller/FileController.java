@@ -73,4 +73,12 @@ public class FileController {
         List<FileResponseDto> files = service.listFilesInAllFiles(username);
         return ResponseEntity.ok(files);
     }
+
+    @GetMapping("/files/deleted")
+    public ResponseEntity<List<FileResponseDto>> listFilesInDeleteFolder(
+            @RequestParam String username) {
+
+        List<FileResponseDto> files = service.listFilesInDeleted(username);
+        return ResponseEntity.ok(files);
+    }
 }
