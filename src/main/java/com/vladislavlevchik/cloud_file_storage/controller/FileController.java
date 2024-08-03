@@ -68,10 +68,9 @@ public class FileController {
 
     @GetMapping("/files")
     public ResponseEntity<List<FileResponseDto>> listFilesInAllFilesFolder(
-            @RequestParam(value = "package", required = false, defaultValue = "") String folderPath,
             @RequestParam String username) {
 
-        List<FileResponseDto> files = service.listFilesInAllFiles(username, folderPath);
+        List<FileResponseDto> files = service.listFilesInAllFiles(username);
         return ResponseEntity.ok(files);
     }
 }

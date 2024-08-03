@@ -102,10 +102,10 @@ public class FileService {
     }
 
     @SneakyThrows
-    public List<FileResponseDto> listFilesInAllFiles(String username, String folderPath) {
+    public List<FileResponseDto> listFilesInAllFiles(String username) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderPath;
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
 
         Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
 
