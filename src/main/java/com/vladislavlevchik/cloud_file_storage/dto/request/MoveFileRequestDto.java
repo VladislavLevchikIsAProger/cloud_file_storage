@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto;
+package com.vladislavlevchik.cloud_file_storage.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
