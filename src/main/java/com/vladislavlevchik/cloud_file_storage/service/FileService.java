@@ -119,15 +119,7 @@ public class FileService {
             String formattedSize = convertBytesToMbOrKb(item.size());
 
             if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + "/deleted")) {
-                fileList.add(FileResponseDto.builder()
-                        .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                        .filePath(getSubdirectories(objectName))
-                        .size(formattedSize)
-                        .lastModified(TimeResponseDto.builder()
-                                .day(item.lastModified().toLocalDate().toString())
-                                .time(item.lastModified().toLocalTime().toString())
-                                .build())
-                        .build());
+                fileList.add(createFileResponseDto(objectName, formattedSize, item));
             }
 
         }
@@ -150,21 +142,20 @@ public class FileService {
 
             String formattedSize = convertBytesToMbOrKb(item.size());
 
-            fileList.add(FileResponseDto.builder()
-                    .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                    .filePath(getSubdirectories(objectName))
-                    .size(formattedSize)
-                    .lastModified(TimeResponseDto.builder()
-                            .day(item.lastModified().toLocalDate().toString())
-                            .time(item.lastModified().toLocalTime().toString())
-                            .build())
-                    .build());
-
+            fileList.add(createFileResponseDto(objectName, formattedSize, item));
         }
 
         return fileList;
     }
 
+    private FileResponseDto createFileResponseDto(String objectName, String formattedSize, Item item){
+        return FileResponseDto.builder()
+                .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
+                .filePath(getSubdirectories(objectName))
+                .size(formattedSize)
+                .lastModified(createTimeResponseDto(item.lastModified()))
+                .build();
+    }
 
     private Iterable<Result<Item>> recursivelyTraverseFolders(String folderPrefix) {
         return minioClient.listObjects(
@@ -206,5 +197,12 @@ public class FileService {
         }
 
         return formattedSize;
+    }
+
+    private TimeResponseDto createTimeResponseDto(ZonedDateTime time){
+        return TimeResponseDto.builder()
+                .day(time.toLocalDate().toString())
+                .time(time.toLocalTime().toString())
+                .build();
     }
 }
