@@ -1,6 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
-import com.vladislavlevchik.cloud_file_storage.dto.UserRegisterRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
