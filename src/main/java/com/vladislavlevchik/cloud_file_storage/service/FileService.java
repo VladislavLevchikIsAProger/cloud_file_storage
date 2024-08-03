@@ -2,6 +2,7 @@ package com.vladislavlevchik.cloud_file_storage.service;
 
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MemoryResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.TimeResponseDto;
 import io.minio.*;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -121,6 +123,10 @@ public class FileService {
                         .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
                         .filePath(getSubdirectories(objectName))
                         .size(formattedSize)
+                        .lastModified(TimeResponseDto.builder()
+                                .day(item.lastModified().toLocalDate().toString())
+                                .time(item.lastModified().toLocalTime().toString())
+                                .build())
                         .build());
             }
 
@@ -148,6 +154,10 @@ public class FileService {
                     .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
                     .filePath(getSubdirectories(objectName))
                     .size(formattedSize)
+                    .lastModified(TimeResponseDto.builder()
+                            .day(item.lastModified().toLocalDate().toString())
+                            .time(item.lastModified().toLocalTime().toString())
+                            .build())
                     .build());
 
         }
