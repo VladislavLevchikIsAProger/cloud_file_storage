@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
+import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MemoryResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.TimeResponseDto;
@@ -28,6 +29,8 @@ public class FileService {
     @Value("${minio.user.memory}")
     private final int userMemory;
     private final static String USER_PACKAGE_PREFIX = "user-";
+    private static final long MEGABYTE = 1_048_576; // 1024 * 1024
+    private static final long KILOBYTE = 1_024; // 1024
 
     //TODO тоже с ексепшенами поработать
     @SneakyThrows
@@ -148,7 +151,50 @@ public class FileService {
         return fileList;
     }
 
-    private FileResponseDto createFileResponseDto(String objectName, String formattedSize, Item item){
+    @SneakyThrows
+    public FileAndFolderResponseDto listFilesAndDirectories(String username, String folderPath) {
+        List<String> folders = new ArrayList<>();
+        List<FileResponseDto> files = new ArrayList<>();
+
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderPath;
+
+        Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
+
+        for (Result<Item> itemResult : objects) {
+            Item item = itemResult.get();
+
+            String objectName = item.objectName();
+
+            String formattedSize = convertBytesToMbOrKb(item.size());
+
+            String relativePath = objectName.substring(folderPrefix.length() + 1);
+
+            if (relativePath.contains("/")) {
+                int index = relativePath.indexOf('/');
+                String subPath = relativePath.substring(0, index);
+
+                if (!folders.contains(subPath)) {
+                    folders.add(subPath);
+                }
+
+            } else {
+                files.add(FileResponseDto.builder()
+                        .filename(relativePath)
+                        .filePath(folderPath + "/")
+                        .size(formattedSize)
+                        .lastModified(createTimeResponseDto(item.lastModified()))
+                        .build());
+            }
+
+        }
+
+        return FileAndFolderResponseDto.builder()
+                .folders(folders)
+                .files(files)
+                .build();
+    }
+
+    private FileResponseDto createFileResponseDto(String objectName, String formattedSize, Item item) {
         return FileResponseDto.builder()
                 .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
                 .filePath(getSubdirectories(objectName))
@@ -176,7 +222,6 @@ public class FileService {
     private String getSubdirectories(String fullPath) {
         fullPath = fullPath.replaceFirst("^[^/]+/", "");
 
-
         if (fullPath.startsWith("deleted/")) {
             fullPath = fullPath.substring("deleted/".length());
         }
@@ -188,18 +233,18 @@ public class FileService {
     private String convertBytesToMbOrKb(long sizeInBytes) {
         String formattedSize;
 
-        if (sizeInBytes >= 1_048_576) {
-            double sizeInMB = sizeInBytes / 1_048_576.0;
+        if (sizeInBytes >= MEGABYTE) {
+            double sizeInMB = sizeInBytes / (double) MEGABYTE;
             formattedSize = String.format("%.2fMB", sizeInMB);
         } else {
-            double sizeInKB = sizeInBytes / 1_024.0;
+            double sizeInKB = sizeInBytes / (double) KILOBYTE;
             formattedSize = String.format("%.2fKB", sizeInKB);
         }
 
         return formattedSize;
     }
 
-    private TimeResponseDto createTimeResponseDto(ZonedDateTime time){
+    private TimeResponseDto createTimeResponseDto(ZonedDateTime time) {
         return TimeResponseDto.builder()
                 .day(time.toLocalDate().toString())
                 .time(time.toLocalTime().toString())

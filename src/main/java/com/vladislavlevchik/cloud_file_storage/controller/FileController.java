@@ -1,8 +1,9 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.MoveFileRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.MoveFileRequestDto;
 import com.vladislavlevchik.cloud_file_storage.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,24 +18,6 @@ import java.util.List;
 public class FileController {
 
     private final FileService service;
-
-    //TODO сделано для множества файлов
-    //TODO Валидация не сделана
-    @PostMapping("/files/upload")
-    public ResponseEntity<?> uploadFile(@RequestPart("files") List<MultipartFile> files,
-                                        @RequestPart("user") String username,
-                                        @RequestPart(value = "folderPath", required = false) String path) {
-
-        service.uploadFile(username, path, files);
-
-        return ResponseEntity.ok(MessageResponseDto.builder().message("File uploaded successfully").build());
-    }
-
-    //TODO валидация не сделана
-    @GetMapping("/files/memory/{username}")
-    public ResponseEntity<?> userMemoryInfo(@PathVariable String username) {
-        return ResponseEntity.ok(service.getMemoryInfo(username));
-    }
 
     //TODO не сделано для множества файлов
     //TODO валидация не сделана
@@ -59,6 +42,24 @@ public class FileController {
         return ResponseEntity.ok(MessageResponseDto.builder().message("The file has been successfully moved to deleted").build());
     }
 
+    //TODO сделано для множества файлов
+    //TODO Валидация не сделана
+    @PostMapping("/files/upload")
+    public ResponseEntity<?> uploadFile(@RequestPart("files") List<MultipartFile> files,
+                                        @RequestPart("user") String username,
+                                        @RequestPart(value = "folderPath", required = false) String path) {
+
+        service.uploadFile(username, path, files);
+
+        return ResponseEntity.ok(MessageResponseDto.builder().message("File uploaded successfully").build());
+    }
+
+    //TODO валидация не сделана
+    @GetMapping("/files/memory/{username}")
+    public ResponseEntity<?> userMemoryInfo(@PathVariable String username) {
+        return ResponseEntity.ok(service.getMemoryInfo(username));
+    }
+
     @GetMapping("/files/user/{username}")
     public ResponseEntity<?> getAllFilesName(@PathVariable String username) {
         List<String> allFiles = service.getAllFiles(username);
@@ -66,8 +67,8 @@ public class FileController {
         return ResponseEntity.ok(allFiles);
     }
 
-    @GetMapping("/files")
-    public ResponseEntity<List<FileResponseDto>> listFilesInAllFilesFolder(
+    @GetMapping("/files/all")
+    public ResponseEntity<?> listFilesInAllFilesFolder(
             @RequestParam String username) {
 
         List<FileResponseDto> files = service.listFilesInAllFiles(username);
@@ -75,10 +76,19 @@ public class FileController {
     }
 
     @GetMapping("/files/deleted")
-    public ResponseEntity<List<FileResponseDto>> listFilesInDeleteFolder(
+    public ResponseEntity<?> listFilesInDeleteFolder(
             @RequestParam String username) {
 
         List<FileResponseDto> files = service.listFilesInDeleted(username);
         return ResponseEntity.ok(files);
+    }
+
+    @GetMapping("/files")
+    public ResponseEntity<?> listFilesAndDirectories(
+            @RequestParam String path,
+            @RequestParam String username) {
+
+        FileAndFolderResponseDto filesAndFolders = service.listFilesAndDirectories(username, path);
+        return ResponseEntity.ok(filesAndFolders);
     }
 }

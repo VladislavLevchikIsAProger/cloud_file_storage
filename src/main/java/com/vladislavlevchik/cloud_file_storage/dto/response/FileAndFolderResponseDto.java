@@ -5,15 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileResponseDto {
+public class FileAndFolderResponseDto {
 
-    private String filename;
-    private String filePath;
-    private String size;
-    private TimeResponseDto lastModified;
+    private List<String> folders;
+    private List<FileResponseDto> files;
 
 }
