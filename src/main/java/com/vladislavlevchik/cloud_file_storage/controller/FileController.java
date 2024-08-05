@@ -1,5 +1,7 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileDeleteRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileMoveRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.MoveFileRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
@@ -60,13 +62,6 @@ public class FileController {
         return ResponseEntity.ok(service.getMemoryInfo(username));
     }
 
-    @GetMapping("/files/user/{username}")
-    public ResponseEntity<?> getAllFilesName(@PathVariable String username) {
-        List<String> allFiles = service.getAllFiles(username);
-
-        return ResponseEntity.ok(allFiles);
-    }
-
     @GetMapping("/files/all")
     public ResponseEntity<?> listFilesInAllFilesFolder(
             @RequestParam String username) {
@@ -90,5 +85,32 @@ public class FileController {
 
         FileAndFolderResponseDto filesAndFolders = service.listFilesAndDirectories(username, path);
         return ResponseEntity.ok(filesAndFolders);
+    }
+
+    @DeleteMapping("/files")
+    public ResponseEntity<?> deleteFiles(
+            @RequestParam String username,
+            @RequestBody List<FileDeleteRequestDto> files) {
+
+        service.deleteFiles(username, files);
+
+        return ResponseEntity.ok(
+                MessageResponseDto.builder()
+                        .message("Files successfully deleted")
+                        .build()
+        );
+    }
+
+    @PostMapping("/files/move")
+    public ResponseEntity<?> moveFiles(
+            @RequestParam String username,
+            @RequestBody FileMoveRequestDto files){
+
+        service.moveFiles(username, files);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Files successfully migrated")
+                .build()
+        );
     }
 }

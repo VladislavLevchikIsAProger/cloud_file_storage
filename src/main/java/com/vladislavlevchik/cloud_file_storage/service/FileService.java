@@ -1,5 +1,8 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileDeleteRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileMoveRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileNameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MemoryResponseDto;
@@ -50,23 +53,6 @@ public class FileService {
                 .totalSize(valueOf(totalSize / (1024.0 * 1000)).setScale(2, HALF_UP))
                 .userMemory(userMemory)
                 .build();
-    }
-
-    @SneakyThrows
-    public List<String> getAllFiles(String username) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
-
-        Iterable<Result<Item>> results = recursivelyTraverseFolders(folderPrefix);
-
-        List<String> files = new ArrayList<>();
-
-        for (Result<Item> result : results) {
-            Item item = result.get();
-            String fileName = item.objectName();
-            files.add(fileName.substring(fileName.lastIndexOf('/') + 1));
-        }
-
-        return files;
     }
 
     //TODO потом надо нормально работу с ошибками обработать
@@ -192,6 +178,70 @@ public class FileService {
                 .folders(folders)
                 .files(files)
                 .build();
+    }
+
+    @SneakyThrows
+    public void deleteFiles(String username, List<FileDeleteRequestDto> files) {
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted";
+
+        List<String> paths = new ArrayList<>();
+
+        for (FileDeleteRequestDto file : files) {
+            paths.add(folderPrefix + "/" + file.getFilePath() + file.getFilename());
+        }
+
+        Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
+
+        for (Result<Item> itemResult : objects) {
+            Item item = itemResult.get();
+            String fileName = item.objectName();
+
+            if (paths.contains(fileName)) {
+                minioClient.removeObject(RemoveObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(fileName)
+                        .build());
+            }
+        }
+    }
+
+    @SneakyThrows
+    public void moveFiles(String username, FileMoveRequestDto fileMoveRequestDto) {
+
+        String sourcePath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource() + "/";
+
+        String targetPath = USER_PACKAGE_PREFIX + username + fileMoveRequestDto.getTarget();
+
+        List<String> pathsFiles = new ArrayList<>();
+
+        for (FileNameRequestDto file : fileMoveRequestDto.getFiles()) {
+            pathsFiles.add(sourcePath + "/" + file.getFilename());
+        }
+
+        Iterable<Result<Item>> objects = recursivelyTraverseFolders(sourcePath);
+
+        for (Result<Item> itemResult : objects) {
+            Item item = itemResult.get();
+            String fileName = item.objectName();
+
+            if (pathsFiles.contains(fileName)) {
+                minioClient.copyObject(CopyObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(targetPath)
+                        .source(CopySource.builder()
+                                .bucket(bucketName)
+                                .object(fileName)
+                                .build())
+                        .build());
+
+                minioClient.removeObject(RemoveObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(fileName)
+                        .build());
+            }
+        }
+
+        System.out.println();
     }
 
     private FileResponseDto createFileResponseDto(String objectName, String formattedSize, Item item) {
