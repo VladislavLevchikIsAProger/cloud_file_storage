@@ -3,28 +3,26 @@ package com.vladislavlevchik.cloud_file_storage.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "users")
-public class User implements Serializable {
+@Table(name = "folders")
+public class CustomFolder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(unique = true, nullable = false)
-    private String username;
+    private String name;
 
     @Column(nullable = false)
-    private String password;
+    private String color;
 
-    @OneToMany(mappedBy = "user")
-    private List<CustomFolder> folders;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
