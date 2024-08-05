@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileCopyRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileDeleteRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileMoveRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
@@ -80,12 +81,25 @@ public class FileController {
     @PostMapping("/files/move")
     public ResponseEntity<?> moveFiles(
             @RequestParam String username,
-            @RequestBody FileMoveRequestDto files){
+            @RequestBody FileMoveRequestDto files) {
 
         service.moveFiles(username, files);
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Files successfully migrated")
+                .build()
+        );
+    }
+
+    @PostMapping("/files/copy")
+    public ResponseEntity<?> copyFiles(
+            @RequestParam String username,
+            @RequestBody FileCopyRequestDto fileCopyRequestDto) {
+
+        service.copyFiles(username, fileCopyRequestDto);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Files successfully copied")
                 .build()
         );
     }

@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileCopyRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileDeleteRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileMoveRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileNameRequestDto;
@@ -31,6 +32,7 @@ public class FileService {
     private final String bucketName;
     @Value("${minio.user.memory}")
     private final int userMemory;
+
     private final static String USER_PACKAGE_PREFIX = "user-";
     private static final long MEGABYTE = 1_048_576; // 1024 * 1024
     private static final long KILOBYTE = 1_024; // 1024
@@ -189,18 +191,26 @@ public class FileService {
     }
 
     @SneakyThrows
-    public void moveFiles(String username, FileMoveRequestDto fileMoveRequestDto) {
-        String sourcePath = (fileMoveRequestDto.getSource().isEmpty())
+    public void moveFiles(String username, FileMoveRequestDto files) {
+        processFiles(username, files.getSource(), files.getTarget(), files.getFiles(), true);
+    }
+
+    @SneakyThrows
+    public void copyFiles(String username, FileCopyRequestDto files) {
+        processFiles(username, files.getSource(), files.getTarget(), files.getFiles(), false);
+    }
+
+    @SneakyThrows
+    private void processFiles(String username, String source, String target, List<FileNameRequestDto> files, boolean isMoveOperation){
+        String sourcePath = (source.isEmpty())
                 ? USER_PACKAGE_PREFIX + username
-                : USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource();
+                : USER_PACKAGE_PREFIX + username + "/" + source;
 
-        String targetPath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getTarget() + "/";
+        String targetPath = USER_PACKAGE_PREFIX + username + "/" + target + "/";
 
-        List<String> pathsFiles = new ArrayList<>();
-
-        for (FileNameRequestDto file : fileMoveRequestDto.getFiles()) {
-            pathsFiles.add(sourcePath + "/" + file.getFilename());
-        }
+        List<String> pathsFiles = files.stream()
+                .map(file -> sourcePath + "/" + file.getFilename())
+                .toList();
 
         Iterable<Result<Item>> objects = recursivelyTraverseFolders(sourcePath);
 
@@ -220,10 +230,12 @@ public class FileService {
                                 .build())
                         .build());
 
-                minioClient.removeObject(RemoveObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(fileName)
-                        .build());
+                if (isMoveOperation) {
+                    minioClient.removeObject(RemoveObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileName)
+                            .build());
+                }
             }
         }
     }
