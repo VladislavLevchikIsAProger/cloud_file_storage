@@ -2,7 +2,6 @@ package com.vladislavlevchik.cloud_file_storage.controller;
 
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileDeleteRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileMoveRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.MoveFileRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
@@ -20,29 +19,6 @@ import java.util.List;
 public class FileController {
 
     private final FileService service;
-
-    //TODO не сделано для множества файлов
-    //TODO валидация не сделана
-    @PostMapping("/file/move")
-    public ResponseEntity<?> moveFile(@RequestBody MoveFileRequestDto request) {
-        service.moveToPackage(
-                "user-" + request.getUsername() + request.getSourceFolder() + "/" + request.getFileName(),
-                "user-" + request.getUsername() + request.getTargetFolder() + "/" + request.getFileName()
-        );
-        return ResponseEntity.ok(MessageResponseDto.builder().message("The file has been successfully moved").build());
-    }
-
-    //TODO не сделано для множества файлов
-    //TODO валидация не сделана
-    @PostMapping("/file/delete")
-    public ResponseEntity<?> moveToDeleted(@RequestBody MoveFileRequestDto request) {
-        service.moveToPackage(
-                "user-" + request.getUsername() + request.getSourceFolder() + "/" + request.getFileName(),
-                "user-" + request.getUsername() + "/deleted" + request.getSourceFolder() + "/" + request.getFileName()
-        );
-
-        return ResponseEntity.ok(MessageResponseDto.builder().message("The file has been successfully moved to deleted").build());
-    }
 
     //TODO сделано для множества файлов
     //TODO Валидация не сделана

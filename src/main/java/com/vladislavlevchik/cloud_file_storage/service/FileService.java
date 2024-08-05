@@ -76,23 +76,6 @@ public class FileService {
     }
 
     @SneakyThrows
-    public void moveToPackage(String sourceObject, String targetObject) {
-        minioClient.copyObject(CopyObjectArgs.builder()
-                .bucket(bucketName)
-                .object(targetObject)
-                .source(CopySource.builder()
-                        .bucket(bucketName)
-                        .object(sourceObject)
-                        .build())
-                .build());
-
-        minioClient.removeObject(RemoveObjectArgs.builder()
-                .bucket(bucketName)
-                .object(sourceObject)
-                .build());
-    }
-
-    @SneakyThrows
     public List<FileResponseDto> listFilesInAllFiles(String username) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
@@ -207,12 +190,9 @@ public class FileService {
 
     @SneakyThrows
     public void moveFiles(String username, FileMoveRequestDto fileMoveRequestDto) {
-        String sourcePath;
-        if (fileMoveRequestDto.getSource().isEmpty()) {
-            sourcePath = USER_PACKAGE_PREFIX + username;
-        } else {
-            sourcePath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource();
-        }
+        String sourcePath = (fileMoveRequestDto.getSource().isEmpty())
+                ? USER_PACKAGE_PREFIX + username
+                : USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource();
 
         String targetPath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getTarget() + "/";
 
