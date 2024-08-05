@@ -208,9 +208,9 @@ public class FileService {
     @SneakyThrows
     public void moveFiles(String username, FileMoveRequestDto fileMoveRequestDto) {
 
-        String sourcePath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource() + "/";
+        String sourcePath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource();
 
-        String targetPath = USER_PACKAGE_PREFIX + username + fileMoveRequestDto.getTarget();
+        String targetPath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getTarget() + "/";
 
         List<String> pathsFiles = new ArrayList<>();
 
@@ -225,9 +225,11 @@ public class FileService {
             String fileName = item.objectName();
 
             if (pathsFiles.contains(fileName)) {
+                String targetFilePath = targetPath + getFileName(fileName);
+
                 minioClient.copyObject(CopyObjectArgs.builder()
                         .bucket(bucketName)
-                        .object(targetPath)
+                        .object(targetFilePath)
                         .source(CopySource.builder()
                                 .bucket(bucketName)
                                 .object(fileName)
@@ -240,8 +242,6 @@ public class FileService {
                         .build());
             }
         }
-
-        System.out.println();
     }
 
     private FileResponseDto createFileResponseDto(String objectName, String formattedSize, Item item) {
@@ -278,6 +278,11 @@ public class FileService {
 
         int lastSlashIndex = fullPath.lastIndexOf('/');
         return (lastSlashIndex == -1) ? "" : fullPath.substring(0, lastSlashIndex + 1);
+    }
+
+    private String getFileName(String filePath) {
+        int lastSlashIndex = filePath.lastIndexOf('/');
+        return (lastSlashIndex == -1) ? filePath : filePath.substring(lastSlashIndex + 1);
     }
 
     private String convertBytesToMbOrKb(long sizeInBytes) {
