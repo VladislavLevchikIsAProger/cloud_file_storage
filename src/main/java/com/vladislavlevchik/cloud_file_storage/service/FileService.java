@@ -207,8 +207,12 @@ public class FileService {
 
     @SneakyThrows
     public void moveFiles(String username, FileMoveRequestDto fileMoveRequestDto) {
-
-        String sourcePath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource();
+        String sourcePath;
+        if (fileMoveRequestDto.getSource().isEmpty()) {
+            sourcePath = USER_PACKAGE_PREFIX + username;
+        } else {
+            sourcePath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getSource();
+        }
 
         String targetPath = USER_PACKAGE_PREFIX + username + "/" + fileMoveRequestDto.getTarget() + "/";
 
