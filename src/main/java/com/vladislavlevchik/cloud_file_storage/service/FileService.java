@@ -1,9 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.FileCopyRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.FileDeleteRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.FileMoveRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.FileNameRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.*;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MemoryResponseDto;
@@ -28,10 +25,14 @@ import static java.math.RoundingMode.HALF_UP;
 public class FileService {
 
     private final MinioClient minioClient;
+
     @Value("${minio.bucket.name}")
     private final String bucketName;
+
     @Value("${minio.user.memory}")
     private final int userMemory;
+
+    private final FolderService folderService;
 
     private final static String USER_PACKAGE_PREFIX = "user-";
     private static final long MEGABYTE = 1_048_576; // 1024 * 1024
@@ -93,7 +94,20 @@ public class FileService {
             String formattedSize = convertBytesToMbOrKb(item.size());
 
             if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + "/deleted")) {
-                fileList.add(createFileResponseDto(objectName, formattedSize, item));
+                String mainSubdirectory = getMainSubdirectory(objectName);
+
+                String folderColor = folderService.getFolderColor(mainSubdirectory, username);
+
+                fileList.add(
+                        FileResponseDto.builder()
+                                .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
+                                .filePath(getSubdirectories(objectName))
+                                .size(formattedSize)
+                                .lastModified(createTimeResponseDto(item.lastModified()))
+                                .customFolderName(mainSubdirectory)
+                                .color(folderColor)
+                                .build()
+                );
             }
 
         }
@@ -151,7 +165,7 @@ public class FileService {
             } else {
                 files.add(FileResponseDto.builder()
                         .filename(relativePath)
-                        .filePath(folderPath + "/")
+                        .filePath(folderPath)
                         .size(formattedSize)
                         .lastModified(createTimeResponseDto(item.lastModified()))
                         .build());
@@ -201,7 +215,42 @@ public class FileService {
     }
 
     @SneakyThrows
-    private void processFiles(String username, String source, String target, List<FileNameRequestDto> files, boolean isMoveOperation){
+    public void renameFile(String username, FileRenameRequestDto fileRenameRequestDto) {
+        String sourcePath = (fileRenameRequestDto.getFilepath().isEmpty())
+                ? USER_PACKAGE_PREFIX + username
+                : USER_PACKAGE_PREFIX + username + "/" + fileRenameRequestDto.getFilepath();
+
+        String pathOldFile = sourcePath + "/" + fileRenameRequestDto.getOldFileName();
+        String pathNewFile = sourcePath + "/" + fileRenameRequestDto.getNewFileName();
+
+        Iterable<Result<Item>> objects = recursivelyTraverseFolders(sourcePath);
+
+        for (Result<Item> itemResult : objects) {
+            Item item = itemResult.get();
+            String fileName = item.objectName();
+
+            if (fileName.equals(pathOldFile)) {
+                minioClient.copyObject(CopyObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(pathNewFile)
+                        .source(CopySource.builder()
+                                .bucket(bucketName)
+                                .object(fileName)
+                                .build())
+                        .build());
+
+                minioClient.removeObject(RemoveObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(pathOldFile)
+                        .build());
+            }
+
+        }
+
+    }
+
+    @SneakyThrows
+    private void processFiles(String username, String source, String target, List<FileNameRequestDto> files, boolean isMoveOperation) {
         String sourcePath = (source.isEmpty())
                 ? USER_PACKAGE_PREFIX + username
                 : USER_PACKAGE_PREFIX + username + "/" + source;
@@ -273,7 +322,20 @@ public class FileService {
         }
 
         int lastSlashIndex = fullPath.lastIndexOf('/');
-        return (lastSlashIndex == -1) ? "" : fullPath.substring(0, lastSlashIndex + 1);
+
+        return (lastSlashIndex == -1) ? "" : fullPath.substring(0, lastSlashIndex);
+    }
+
+    private String getMainSubdirectory(String path) {
+        String strippedPath = path.substring(path.indexOf('/') + 1);
+
+        int nextSlashIndex = strippedPath.indexOf('/');
+
+        if (nextSlashIndex != -1) {
+            return strippedPath.substring(0, nextSlashIndex);
+        } else {
+            return "";
+        }
     }
 
     private String getFileName(String filePath) {

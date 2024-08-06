@@ -15,5 +15,7 @@ public class FileResponseDto {
     private String filePath;
     private String size;
     private TimeResponseDto lastModified;
+    private String color;
+    private String customFolderName;
 
 }

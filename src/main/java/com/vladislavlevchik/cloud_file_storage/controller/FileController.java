@@ -3,6 +3,7 @@ package com.vladislavlevchik.cloud_file_storage.controller;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileCopyRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileDeleteRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FileMoveRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.FileRenameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
@@ -100,6 +101,19 @@ public class FileController {
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Files successfully copied")
+                .build()
+        );
+    }
+
+    @PostMapping("/file/rename")
+    public ResponseEntity<?> renameFile(
+            @RequestParam String username,
+            @RequestBody FileRenameRequestDto fileRenameRequestDto) {
+
+        service.renameFile(username, fileRenameRequestDto);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Files successfully renamed")
                 .build()
         );
     }

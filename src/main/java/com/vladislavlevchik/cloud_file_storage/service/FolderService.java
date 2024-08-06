@@ -49,4 +49,8 @@ public class FolderService {
                 .toList();
     }
 
+    public String getFolderColor(String folderName, String username) {
+        return customFolderRepository.findColorByNameAndUsername(folderName, username);
+    }
+
 }
