@@ -7,21 +7,35 @@ import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.exception.UserNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
+import io.minio.ListObjectsArgs;
+import io.minio.MinioClient;
+import io.minio.Result;
+import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class FolderService {
 
+    private final MinioClient minioClient;
     private final CustomFolderRepository customFolderRepository;
     private final UserRepository userRepository;
     private final ModelMapper mapper;
+
+    @Value("${minio.bucket.name}")
+    private final String bucketName;
+
+    private final static String USER_PACKAGE_PREFIX = "user-";
+    private static final long MEGABYTE = 1_048_576; // 1024 * 1024
+    private static final long KILOBYTE = 1_024; // 1024
+
 
     public void createFolder(FolderRequestDto dto) {
         CustomFolder folder = mapper.map(dto, CustomFolder.class);
@@ -36,7 +50,10 @@ public class FolderService {
         customFolderRepository.save(folder);
     }
 
+    @SneakyThrows
     public List<FolderResponseDto> getList(String username) {
+        String folderPrefix = USER_PACKAGE_PREFIX + username;
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(
                         () -> new UserNotFoundException("User " + username + " not found")
@@ -44,13 +61,59 @@ public class FolderService {
 
         List<CustomFolder> folders = user.getFolders();
 
-        return folders.stream()
-                .map(folder -> mapper.map(folder, FolderResponseDto.class))
-                .toList();
+        List<FolderResponseDto> responseDtos = new ArrayList<>();
+
+        for (CustomFolder folder : folders) {
+            Iterable<Result<Item>> results = recursivelyTraverseFolders(folderPrefix + "/" + folder.getName());
+
+            int itemCount = 0;
+            long totalSize = 0;
+
+            for (Result<Item> result : results) {
+                Item item = result.get();
+                itemCount++;
+                totalSize += item.size();
+            }
+
+            FolderResponseDto dto = FolderResponseDto.builder()
+                    .name(folder.getName())
+                    .color(folder.getColor())
+                    .size(convertBytesToMbOrKb(totalSize))
+                    .filesNumber(String.valueOf(itemCount))
+                    .build();
+
+            responseDtos.add(dto);
+        }
+
+        return responseDtos;
     }
 
     public String getFolderColor(String folderName, String username) {
         return customFolderRepository.findColorByNameAndUsername(folderName, username);
+    }
+
+    private Iterable<Result<Item>> recursivelyTraverseFolders(String folderPrefix) {
+        return minioClient.listObjects(
+                ListObjectsArgs.builder()
+                        .bucket(bucketName)
+                        .prefix(folderPrefix)
+                        .recursive(true)
+                        .build()
+        );
+    }
+
+    private String convertBytesToMbOrKb(long sizeInBytes) {
+        String formattedSize;
+
+        if (sizeInBytes >= MEGABYTE) {
+            double sizeInMB = sizeInBytes / (double) MEGABYTE;
+            formattedSize = String.format("%.2fMB", sizeInMB);
+        } else {
+            double sizeInKB = sizeInBytes / (double) KILOBYTE;
+            formattedSize = String.format("%.2fKB", sizeInKB);
+        }
+
+        return formattedSize;
     }
 
 }

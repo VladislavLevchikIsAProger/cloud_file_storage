@@ -13,5 +13,7 @@ public class FolderResponseDto {
 
     private String name;
     private String color;
+    private String size;
+    private String filesNumber;
 
 }
