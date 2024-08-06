@@ -91,6 +91,10 @@ public class FileService {
 
             String objectName = item.objectName();
 
+            if (objectName.endsWith(".empty")) {
+                continue;
+            }
+
             String formattedSize = convertBytesToMbOrKb(item.size());
 
             if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + "/deleted")) {
@@ -149,6 +153,10 @@ public class FileService {
             Item item = itemResult.get();
 
             String objectName = item.objectName();
+
+            if (objectName.endsWith(".empty")) {
+                continue;
+            }
 
             String formattedSize = convertBytesToMbOrKb(item.size());
 

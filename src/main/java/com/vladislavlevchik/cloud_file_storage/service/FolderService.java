@@ -1,15 +1,14 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.exception.UserNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
-import io.minio.ListObjectsArgs;
-import io.minio.MinioClient;
-import io.minio.Result;
+import io.minio.*;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -17,6 +16,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,6 +86,22 @@ public class FolderService {
         }
 
         return responseDtos;
+    }
+
+    @SneakyThrows
+    public void createSubFolder(SubFolderRequestDto subFolderRequestDto) {
+        String folderPath = USER_PACKAGE_PREFIX + subFolderRequestDto.getUsername() + "/"
+                + subFolderRequestDto.getFolderPath() + "/" + subFolderRequestDto.getName() + "/";
+
+        String emptyFilePath = folderPath + ".empty";
+
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(emptyFilePath)
+                        .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
+                        .build()
+        );
     }
 
     public String getFolderColor(String folderName, String username) {

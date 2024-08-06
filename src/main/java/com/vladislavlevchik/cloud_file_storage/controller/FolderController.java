@@ -1,6 +1,7 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.FolderService;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +16,22 @@ public class FolderController {
     private final FolderService service;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createPackage(@RequestBody FolderRequestDto folderRequestDto) {
+    public ResponseEntity<?> createFolder(@RequestBody FolderRequestDto folderRequestDto) {
 
         service.createFolder(folderRequestDto);
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Folder successfully created")
+                .build());
+    }
+
+    @PostMapping("/create/subfolder")
+    public ResponseEntity<?> createSubFolder(@RequestBody SubFolderRequestDto subFolderRequestDto) {
+
+        service.createSubFolder(subFolderRequestDto);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Subfolder successfully created")
                 .build());
     }
 
