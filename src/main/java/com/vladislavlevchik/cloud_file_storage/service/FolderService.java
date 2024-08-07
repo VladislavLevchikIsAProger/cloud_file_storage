@@ -71,6 +71,10 @@ public class FolderService {
 
             for (Result<Item> result : results) {
                 Item item = result.get();
+                if (item.objectName().endsWith(".empty")) {
+                    continue;
+                }
+
                 itemCount++;
                 totalSize += item.size();
             }
