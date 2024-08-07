@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface CustomFolderRepository extends JpaRepository<CustomFolder, Long> {
 
-    @Query("SELECT cf.color FROM CustomFolder cf JOIN cf.user u WHERE cf.name = :name AND u.username = :username")
+    @Query("SELECT cf.color FROM CustomFolder cf WHERE cf.name = :name AND cf.user.username = :username")
     String findColorByNameAndUsername(@Param("name") String name, @Param("username") String username);
 
 }
