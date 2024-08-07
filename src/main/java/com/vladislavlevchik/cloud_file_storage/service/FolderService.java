@@ -2,6 +2,7 @@ package com.vladislavlevchik.cloud_file_storage.service;
 
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.FolderForMoveResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -90,6 +92,20 @@ public class FolderService {
         }
 
         return responseDtos;
+    }
+
+    @SneakyThrows
+    public List<FolderForMoveResponseDto> getListForMove(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(
+                        () -> new UserNotFoundException("User " + username + " not found")
+                );
+
+        List<CustomFolder> folders = user.getFolders();
+
+        return folders.stream()
+                .map(folder -> mapper.map(folder, FolderForMoveResponseDto.class))
+                .collect(Collectors.toList());
     }
 
     @SneakyThrows

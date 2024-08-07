@@ -46,6 +46,13 @@ public class FolderController {
         return ResponseEntity.ok(service.getList(username));
     }
 
+    @GetMapping("/moved")
+    public ResponseEntity<?> listFoldersForMove(){
+        String username = getUserNameFromPrincipal();
+
+        return ResponseEntity.ok(service.getListForMove(username));
+    }
+
     private String getUserNameFromPrincipal() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getName();
