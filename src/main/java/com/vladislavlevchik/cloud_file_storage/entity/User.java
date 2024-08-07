@@ -27,7 +27,7 @@ public class User implements Serializable {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<CustomFolder> folders;
-//
-//    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-//    private List<Favorite> favorites;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Favorite> favorites;
 }
