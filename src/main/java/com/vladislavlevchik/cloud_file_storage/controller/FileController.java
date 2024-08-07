@@ -118,29 +118,4 @@ public class FileController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getName();
     }
-//
-//    @PostMapping("/file/favorites/add")
-//    public ResponseEntity<?> addToFavorites(
-//            @RequestParam String username,
-//            @RequestBody FileToFavoriteRequestDto file) {
-//
-//        service.addToFavorites(username, file);
-//
-//        return ResponseEntity.ok(MessageResponseDto.builder()
-//                .message("Files successfully renamed")
-//                .build()
-//        );
-//    }
-//
-//    @GetMapping("/file/favorites/all")
-//    public ResponseEntity<?> listFavorites(
-//            @RequestParam String username) {
-//
-//        service.addToFavorites(username, file);
-//
-//        return ResponseEntity.ok(MessageResponseDto.builder()
-//                .message("Files successfully renamed")
-//                .build()
-//        );
-//    }
 }

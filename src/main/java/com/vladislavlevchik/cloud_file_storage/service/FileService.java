@@ -5,6 +5,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderRespons
 import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MemoryResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.TimeResponseDto;
+import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
 import io.minio.*;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import static java.math.RoundingMode.HALF_UP;
 public class FileService {
 
     private final MinioClient minioClient;
+    private final MinioOperationUtil minio;
 
     @Value("${minio.bucket.name}")
     private final String bucketName;
@@ -45,7 +47,7 @@ public class FileService {
 
         long totalSize = 0;
 
-        Iterable<Result<Item>> results = recursivelyTraverseFolders(folderPrefix);
+        Iterable<Result<Item>> results = minio.listObjects(folderPrefix);
 
         for (Result<Item> result : results) {
             Item item = result.get();
@@ -71,12 +73,7 @@ public class FileService {
                     ? USER_PACKAGE_PREFIX + username + path + "/" + file.getOriginalFilename()
                     : USER_PACKAGE_PREFIX + username + "/" + path + "/" + file.getOriginalFilename();
 
-            minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(fileKey)
-                    .stream(file.getInputStream(), file.getSize(), -1)
-                    .contentType(file.getContentType())
-                    .build());
+            minio.put(fileKey, file.getInputStream(), file.getSize(), file.getContentType());
         }
     }
 
@@ -86,7 +83,7 @@ public class FileService {
 
         String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
 
-        Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
+        Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
@@ -127,7 +124,7 @@ public class FileService {
 
         String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted";
 
-        Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
+        Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
@@ -156,7 +153,7 @@ public class FileService {
 
         String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderPath;
 
-        Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
+        Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
@@ -209,17 +206,14 @@ public class FileService {
             paths.add(filePath);
         }
 
-        Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
+        Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
             String fileName = item.objectName();
 
             if (paths.contains(fileName)) {
-                minioClient.removeObject(RemoveObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(fileName)
-                        .build());
+                minio.remove(fileName);
             }
         }
     }
@@ -243,26 +237,16 @@ public class FileService {
         String pathOldFile = sourcePath + "/" + fileRenameRequestDto.getOldFileName();
         String pathNewFile = sourcePath + "/" + fileRenameRequestDto.getNewFileName();
 
-        Iterable<Result<Item>> objects = recursivelyTraverseFolders(sourcePath);
+        Iterable<Result<Item>> objects = minio.listObjects(sourcePath);
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
             String fileName = item.objectName();
 
             if (fileName.equals(pathOldFile)) {
-                minioClient.copyObject(CopyObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(pathNewFile)
-                        .source(CopySource.builder()
-                                .bucket(bucketName)
-                                .object(fileName)
-                                .build())
-                        .build());
+                minio.copy(fileName, pathNewFile);
 
-                minioClient.removeObject(RemoveObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(pathOldFile)
-                        .build());
+                minio.remove(fileName);
             }
 
         }
@@ -281,7 +265,7 @@ public class FileService {
                 .map(file -> sourcePath + "/" + file.getFilename())
                 .toList();
 
-        Iterable<Result<Item>> objects = recursivelyTraverseFolders(sourcePath);
+        Iterable<Result<Item>> objects = minio.listObjects(sourcePath);
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
@@ -290,33 +274,13 @@ public class FileService {
             if (pathsFiles.contains(fileName)) {
                 String targetFilePath = targetPath + getFileName(fileName);
 
-                minioClient.copyObject(CopyObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(targetFilePath)
-                        .source(CopySource.builder()
-                                .bucket(bucketName)
-                                .object(fileName)
-                                .build())
-                        .build());
+                minio.copy(fileName, targetFilePath);
 
                 if (isMoveOperation) {
-                    minioClient.removeObject(RemoveObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(fileName)
-                            .build());
+                    minio.remove(fileName);
                 }
             }
         }
-    }
-
-    private Iterable<Result<Item>> recursivelyTraverseFolders(String folderPrefix) {
-        return minioClient.listObjects(
-                ListObjectsArgs.builder()
-                        .bucket(bucketName)
-                        .prefix(folderPrefix)
-                        .recursive(true)
-                        .build()
-        );
     }
 
     /**
