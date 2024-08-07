@@ -13,6 +13,5 @@ public class FolderRequestDto {
 
     private String name;
     private String color;
-    private String username;
 
 }

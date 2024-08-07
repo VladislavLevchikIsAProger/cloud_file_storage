@@ -13,6 +13,5 @@ public class SubFolderRequestDto {
 
     private String folderPath;
     private String name;
-    private String username;
 
 }

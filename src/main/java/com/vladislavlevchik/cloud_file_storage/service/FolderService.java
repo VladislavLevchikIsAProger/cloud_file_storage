@@ -37,12 +37,12 @@ public class FolderService {
     private static final long KILOBYTE = 1_024; // 1024
 
 
-    public void createFolder(FolderRequestDto dto) {
+    public void createFolder(String username, FolderRequestDto dto) {
         CustomFolder folder = mapper.map(dto, CustomFolder.class);
 
-        User user = userRepository.findByUsername(dto.getUsername())
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(
-                        () -> new UserNotFoundException("User " + dto.getUsername() + " not found")
+                        () -> new UserNotFoundException("User " + username + " not found")
                 );
 
         folder.setUser(user);
@@ -89,8 +89,8 @@ public class FolderService {
     }
 
     @SneakyThrows
-    public void createSubFolder(SubFolderRequestDto subFolderRequestDto) {
-        String folderPath = USER_PACKAGE_PREFIX + subFolderRequestDto.getUsername() + "/"
+    public void createSubFolder(String username, SubFolderRequestDto subFolderRequestDto) {
+        String folderPath = USER_PACKAGE_PREFIX + username + "/"
                 + subFolderRequestDto.getFolderPath() + "/" + subFolderRequestDto.getName() + "/";
 
         String emptyFilePath = folderPath + ".empty";

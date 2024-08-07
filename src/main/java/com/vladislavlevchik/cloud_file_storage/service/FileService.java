@@ -67,7 +67,9 @@ public class FileService {
         }
 
         for (MultipartFile file : files) {
-            String fileKey = USER_PACKAGE_PREFIX + username + path + "/" + file.getOriginalFilename();
+            String fileKey = (path.isEmpty())
+                    ? USER_PACKAGE_PREFIX + username + path + "/" + file.getOriginalFilename()
+                    : USER_PACKAGE_PREFIX + username + "/" + path + "/" + file.getOriginalFilename();
 
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
@@ -134,7 +136,14 @@ public class FileService {
 
             String formattedSize = convertBytesToMbOrKb(item.size());
 
-            fileList.add(createFileResponseDto(objectName, formattedSize, item));
+            fileList.add(
+                    FileResponseDto.builder()
+                            .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
+                            .filePath(getSubdirectories(objectName))
+                            .size(formattedSize)
+                            .lastModified(createTimeResponseDto(item.lastModified()))
+                            .build()
+            );
         }
 
         return fileList;
@@ -194,7 +203,10 @@ public class FileService {
         List<String> paths = new ArrayList<>();
 
         for (FileDeleteRequestDto file : files) {
-            paths.add(folderPrefix + "/" + file.getFilePath() + file.getFilename());
+            String filePath = (file.getFilePath().isEmpty())
+                    ? USER_PACKAGE_PREFIX + username + "/deleted/" + file.getFilename()
+                    : USER_PACKAGE_PREFIX + username + "/deleted/" + file.getFilePath() + "/" + file.getFilename();
+            paths.add(filePath);
         }
 
         Iterable<Result<Item>> objects = recursivelyTraverseFolders(folderPrefix);
@@ -297,15 +309,6 @@ public class FileService {
         }
     }
 
-    private FileResponseDto createFileResponseDto(String objectName, String formattedSize, Item item) {
-        return FileResponseDto.builder()
-                .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                .filePath(getSubdirectories(objectName))
-                .size(formattedSize)
-                .lastModified(createTimeResponseDto(item.lastModified()))
-                .build();
-    }
-
     private Iterable<Result<Item>> recursivelyTraverseFolders(String folderPrefix) {
         return minioClient.listObjects(
                 ListObjectsArgs.builder()
@@ -320,7 +323,7 @@ public class FileService {
      * Extracts the base directory from a full path by removing the initial part and retaining only the directory.
      *
      * @param fullPath The full path to the file or directory, e.g., "user-Vlad/files/png/award-yel.png".
-     * @return The base directory, e.g., "files/png/".
+     * @return The base directory, e.g., "files/png".
      */
     private String getSubdirectories(String fullPath) {
         fullPath = fullPath.replaceFirst("^[^/]+/", "");
