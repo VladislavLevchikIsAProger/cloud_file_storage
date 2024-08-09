@@ -109,7 +109,7 @@ public class FileController {
         service.recoverFiles(username, files);
 
         return ResponseEntity.ok(MessageResponseDto.builder()
-                .message("Files successfully migrated")
+                .message("Files successfully recovered")
                 .build()
         );
     }

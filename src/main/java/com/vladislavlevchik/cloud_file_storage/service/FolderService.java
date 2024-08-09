@@ -30,20 +30,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FolderService {
 
-    private final MinioClient minioClient;
     private final CustomFolderRepository customFolderRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
+
+    private final MinioOperationUtil minio;
     private final ModelMapper mapper;
     private final BytesConverter bytesConverter;
 
-    private final MinioOperationUtil minio;
-
-    private final UserService userService;
-
-    @Value("${minio.bucket.name}")
-    private final String bucketName;
-
     private final static String USER_PACKAGE_PREFIX = "user-";
+
 
     public void createFolder(String username, FolderRequestDto dto) {
         CustomFolder folder = mapper.map(dto, CustomFolder.class);
@@ -62,7 +57,6 @@ public class FolderService {
                 .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
 
         folder.setName(renameRequestDto.getNewName());
-
         customFolderRepository.save(folder);
 
         String newFolderName = renameRequestDto.getNewName();
@@ -70,32 +64,12 @@ public class FolderService {
         String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
         String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName;
 
-        Iterable<Result<Item>> items = minio.listObjects(oldFolderPrefix);
-
-        for (Result<Item> result : items) {
-            Item item = result.get();
-            String oldObjectName = item.objectName();
-            String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
-
-            minio.copy(oldObjectName, newObjectName);
-
-            minio.remove(item.objectName());
-        }
+        moveFolderContents(oldFolderPrefix, newFolderPrefix);
 
         String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + folderName;
         String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName;
 
-        items = minio.listObjects(deletedOldFolderPrefix);
-
-        for (Result<Item> result : items) {
-            Item item = result.get();
-            String oldObjectName = item.objectName();
-            String newObjectName = oldObjectName.replace(deletedOldFolderPrefix, deletedNewFolderPrefix);
-
-            minio.copy(oldObjectName, newObjectName);
-
-            minio.remove(item.objectName());
-        }
+        moveFolderContents(deletedOldFolderPrefix, deletedNewFolderPrefix);
     }
 
     public void updateColor(String username, String folderName, FolderChangeColorRequestDto colorRequestDto) {
@@ -103,7 +77,6 @@ public class FolderService {
                 .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
 
         folder.setColor(colorRequestDto.getNewColor());
-
         customFolderRepository.save(folder);
     }
 
@@ -113,35 +86,9 @@ public class FolderService {
 
         List<CustomFolder> folders = userService.getListFolders(username);
 
-        List<FolderResponseDto> responseDtos = new ArrayList<>();
-
-        for (CustomFolder folder : folders) {
-            Iterable<Result<Item>> results = minio.listObjects(folderPrefix + "/" + folder.getName());
-
-            int itemCount = 0;
-            long totalSize = 0;
-
-            for (Result<Item> result : results) {
-                Item item = result.get();
-                if (item.objectName().endsWith(".empty")) {
-                    continue;
-                }
-
-                itemCount++;
-                totalSize += item.size();
-            }
-
-            FolderResponseDto dto = FolderResponseDto.builder()
-                    .name(folder.getName())
-                    .color(folder.getColor())
-                    .size(bytesConverter.convertToMbOrKb(totalSize))
-                    .filesNumber(String.valueOf(itemCount))
-                    .build();
-
-            responseDtos.add(dto);
-        }
-
-        return responseDtos;
+        return folders.stream()
+                .map(folder -> getFolderResponse(folderPrefix, folder))
+                .collect(Collectors.toList());
     }
 
     @SneakyThrows
@@ -163,5 +110,42 @@ public class FolderService {
 
     public String getFolderColor(String folderName, String username) {
         return customFolderRepository.findColorByNameAndUsername(folderName, username);
+    }
+
+    @SneakyThrows
+    private void moveFolderContents(String oldFolderPrefix, String newFolderPrefix) {
+        Iterable<Result<Item>> items = minio.listObjects(oldFolderPrefix);
+
+        for (Result<Item> result : items) {
+            Item item = result.get();
+            String oldObjectName = item.objectName();
+            String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
+
+            minio.copy(oldObjectName, newObjectName);
+            minio.remove(oldObjectName);
+        }
+    }
+
+    @SneakyThrows
+    private FolderResponseDto getFolderResponse(String folderPrefix, CustomFolder folder) {
+        Iterable<Result<Item>> results = minio.listObjects(folderPrefix + "/" + folder.getName());
+
+        long totalSize = 0;
+        long itemCount = 0;
+
+        for (Result<Item> result : results) {
+            Item item = result.get();
+            if (!item.objectName().endsWith(".empty")) {
+                itemCount++;
+                totalSize += item.size();
+            }
+        }
+
+        return FolderResponseDto.builder()
+                .name(folder.getName())
+                .color(folder.getColor())
+                .size(bytesConverter.convertToMbOrKb(totalSize))
+                .filesNumber(String.valueOf(itemCount))
+                .build();
     }
 }
