@@ -102,6 +102,18 @@ public class FileController {
         );
     }
 
+    @PostMapping("/files/recover")
+    public ResponseEntity<?> recoversFiles(@RequestBody List<FileRecoverRequestDto> files) {
+        String username = getUserNameFromPrincipal();
+
+        service.recoverFiles(username, files);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Files successfully migrated")
+                .build()
+        );
+    }
+
     @PostMapping("/file/rename")
     public ResponseEntity<?> renameFile(@RequestBody FileRenameRequestDto fileRenameRequestDto) {
         String username = getUserNameFromPrincipal();

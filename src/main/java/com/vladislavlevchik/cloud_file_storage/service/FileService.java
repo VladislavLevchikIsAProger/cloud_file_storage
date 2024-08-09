@@ -17,7 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.math.BigDecimal.valueOf;
 import static java.math.RoundingMode.HALF_UP;
@@ -252,6 +254,40 @@ public class FileService {
 
         }
 
+    }
+
+    @SneakyThrows
+    public void recoverFiles(String username, List<FileRecoverRequestDto> files) {
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted";
+
+        Map<String, String> pathsMap = new HashMap<>();
+
+        for (FileRecoverRequestDto file : files) {
+            String sourcePath = (file.getFilePath().isEmpty())
+                    ? folderPrefix + "/" + file.getFilename()
+                    : folderPrefix + "/" + file.getFilePath() + "/" + file.getFilename();
+
+            String destinationPath = (file.getFilePath().isEmpty())
+                    ? USER_PACKAGE_PREFIX + username + "/" + file.getFilename()
+                    : USER_PACKAGE_PREFIX + username + "/" + file.getFilePath() + "/" + file.getFilename();
+
+            pathsMap.put(sourcePath, destinationPath);
+        }
+
+        Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
+
+        for (Result<Item> itemResult : objects) {
+            Item item = itemResult.get();
+            String fileName = item.objectName();
+
+            if (pathsMap.containsKey(fileName)) {
+                String destinationPath = pathsMap.get(fileName);
+
+                minio.copy(fileName, destinationPath);
+
+                minio.remove(fileName);
+            }
+        }
     }
 
     @SneakyThrows
