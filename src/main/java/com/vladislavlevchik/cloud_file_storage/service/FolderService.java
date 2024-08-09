@@ -9,9 +9,10 @@ import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.exception.FolderNotFoundException;
-import com.vladislavlevchik.cloud_file_storage.exception.UserNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
+import com.vladislavlevchik.cloud_file_storage.util.BytesConverter;
+import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
 import io.minio.*;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
@@ -33,22 +34,21 @@ public class FolderService {
     private final CustomFolderRepository customFolderRepository;
     private final UserRepository userRepository;
     private final ModelMapper mapper;
+    private final BytesConverter bytesConverter;
+
+    private final MinioOperationUtil minio;
+
+    private final UserService userService;
 
     @Value("${minio.bucket.name}")
     private final String bucketName;
 
     private final static String USER_PACKAGE_PREFIX = "user-";
-    private static final long MEGABYTE = 1_048_576; // 1024 * 1024
-    private static final long KILOBYTE = 1_024; // 1024
-
 
     public void createFolder(String username, FolderRequestDto dto) {
         CustomFolder folder = mapper.map(dto, CustomFolder.class);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(
-                        () -> new UserNotFoundException("User " + username + " not found")
-                );
+        User user = userService.getUser(username);
 
         folder.setUser(user);
 
@@ -70,59 +70,31 @@ public class FolderService {
         String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
         String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName;
 
-        Iterable<Result<Item>> items = recursivelyTraverseFolders(oldFolderPrefix);
+        Iterable<Result<Item>> items = minio.listObjects(oldFolderPrefix);
 
         for (Result<Item> result : items) {
             Item item = result.get();
             String oldObjectName = item.objectName();
             String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
 
-            minioClient.copyObject(
-                    CopyObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(newObjectName)
-                            .source(CopySource.builder()
-                                    .bucket(bucketName)
-                                    .object(oldObjectName)
-                                    .build())
-                            .build()
-            );
+            minio.copy(oldObjectName, newObjectName);
 
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(item.objectName())
-                            .build()
-            );
+            minio.remove(item.objectName());
         }
 
         String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + folderName;
         String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName;
 
-        items = recursivelyTraverseFolders(deletedOldFolderPrefix);
+        items = minio.listObjects(deletedOldFolderPrefix);
 
         for (Result<Item> result : items) {
             Item item = result.get();
             String oldObjectName = item.objectName();
             String newObjectName = oldObjectName.replace(deletedOldFolderPrefix, deletedNewFolderPrefix);
 
-            minioClient.copyObject(
-                    CopyObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(newObjectName)
-                            .source(CopySource.builder()
-                                    .bucket(bucketName)
-                                    .object(oldObjectName)
-                                    .build())
-                            .build()
-            );
+            minio.copy(oldObjectName, newObjectName);
 
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(item.objectName())
-                            .build()
-            );
+            minio.remove(item.objectName());
         }
     }
 
@@ -139,17 +111,12 @@ public class FolderService {
     public List<FolderResponseDto> getList(String username) {
         String folderPrefix = USER_PACKAGE_PREFIX + username;
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(
-                        () -> new UserNotFoundException("User " + username + " not found")
-                );
-
-        List<CustomFolder> folders = user.getFolders();
+        List<CustomFolder> folders = userService.getListFolders(username);
 
         List<FolderResponseDto> responseDtos = new ArrayList<>();
 
         for (CustomFolder folder : folders) {
-            Iterable<Result<Item>> results = recursivelyTraverseFolders(folderPrefix + "/" + folder.getName());
+            Iterable<Result<Item>> results = minio.listObjects(folderPrefix + "/" + folder.getName());
 
             int itemCount = 0;
             long totalSize = 0;
@@ -167,7 +134,7 @@ public class FolderService {
             FolderResponseDto dto = FolderResponseDto.builder()
                     .name(folder.getName())
                     .color(folder.getColor())
-                    .size(convertBytesToMbOrKb(totalSize))
+                    .size(bytesConverter.convertToMbOrKb(totalSize))
                     .filesNumber(String.valueOf(itemCount))
                     .build();
 
@@ -179,12 +146,7 @@ public class FolderService {
 
     @SneakyThrows
     public List<FolderForMoveResponseDto> getListForMove(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(
-                        () -> new UserNotFoundException("User " + username + " not found")
-                );
-
-        List<CustomFolder> folders = user.getFolders();
+        List<CustomFolder> folders = userService.getListFolders(username);
 
         return folders.stream()
                 .map(folder -> mapper.map(folder, FolderForMoveResponseDto.class))
@@ -196,42 +158,10 @@ public class FolderService {
         String folderPath = USER_PACKAGE_PREFIX + username + "/"
                 + subFolderRequestDto.getFolderPath() + "/" + subFolderRequestDto.getName() + "/";
 
-        String emptyFilePath = folderPath + ".empty";
-
-        minioClient.putObject(
-                PutObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(emptyFilePath)
-                        .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
-                        .build()
-        );
+        minio.createEmptyPackage(folderPath);
     }
 
     public String getFolderColor(String folderName, String username) {
         return customFolderRepository.findColorByNameAndUsername(folderName, username);
-    }
-
-    private Iterable<Result<Item>> recursivelyTraverseFolders(String folderPrefix) {
-        return minioClient.listObjects(
-                ListObjectsArgs.builder()
-                        .bucket(bucketName)
-                        .prefix(folderPrefix)
-                        .recursive(true)
-                        .build()
-        );
-    }
-
-    private String convertBytesToMbOrKb(long sizeInBytes) {
-        String formattedSize;
-
-        if (sizeInBytes >= MEGABYTE) {
-            double sizeInMB = sizeInBytes / (double) MEGABYTE;
-            formattedSize = String.format("%.2fMB", sizeInMB);
-        } else {
-            double sizeInKB = sizeInBytes / (double) KILOBYTE;
-            formattedSize = String.format("%.2fKB", sizeInKB);
-        }
-
-        return formattedSize;
     }
 }

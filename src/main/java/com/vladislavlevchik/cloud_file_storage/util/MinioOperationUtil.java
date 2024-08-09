@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 @Component
@@ -52,6 +53,16 @@ public class MinioOperationUtil {
                         .object(sourceFileName)
                         .build())
                 .build());
+    }
+
+    public void createEmptyPackage(String folderPath) throws Exception{
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(folderPath + ".empty")
+                        .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
+                        .build()
+        );
     }
 
 }
