@@ -114,11 +114,13 @@ public class FileController {
         );
     }
 
-    @PostMapping("/file/rename")
-    public ResponseEntity<?> renameFile(@RequestBody FileRenameRequestDto fileRenameRequestDto) {
+    @PatchMapping("/file/{fileName}")
+    public ResponseEntity<?> renameFile(
+            @PathVariable String fileName,
+            @RequestBody FileRenameRequestDto fileRenameRequestDto) {
         String username = getUserNameFromPrincipal();
 
-        service.renameFile(username, fileRenameRequestDto);
+        service.renameFile(username, fileName, fileRenameRequestDto);
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Files successfully renamed")

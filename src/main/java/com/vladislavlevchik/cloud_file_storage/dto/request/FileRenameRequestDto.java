@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class FileRenameRequestDto {
 
-    private String oldFileName;
+//    private String oldFileName;
     private String filepath;
     private String newFileName;
 

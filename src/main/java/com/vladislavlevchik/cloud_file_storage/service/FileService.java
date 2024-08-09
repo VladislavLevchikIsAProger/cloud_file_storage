@@ -232,12 +232,12 @@ public class FileService {
     }
 
     @SneakyThrows
-    public void renameFile(String username, FileRenameRequestDto fileRenameRequestDto) {
+    public void renameFile(String username, String filename, FileRenameRequestDto fileRenameRequestDto) {
         String sourcePath = (fileRenameRequestDto.getFilepath().isEmpty())
                 ? USER_PACKAGE_PREFIX + username
                 : USER_PACKAGE_PREFIX + username + "/" + fileRenameRequestDto.getFilepath();
 
-        String pathOldFile = sourcePath + "/" + fileRenameRequestDto.getOldFileName();
+        String pathOldFile = sourcePath + "/" + filename;
         String pathNewFile = sourcePath + "/" + fileRenameRequestDto.getNewFileName();
 
         Iterable<Result<Item>> objects = minio.listObjects(sourcePath);
