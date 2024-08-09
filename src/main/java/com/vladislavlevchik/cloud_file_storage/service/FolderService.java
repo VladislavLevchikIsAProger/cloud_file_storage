@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FolderChangeColorRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRenameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
@@ -71,7 +72,7 @@ public class FolderService {
 
         Iterable<Result<Item>> items = recursivelyTraverseFolders(oldFolderPrefix);
 
-        for (Result<Item> result: items){
+        for (Result<Item> result : items) {
             Item item = result.get();
             String oldObjectName = item.objectName();
             String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
@@ -123,6 +124,15 @@ public class FolderService {
                             .build()
             );
         }
+    }
+
+    public void updateColor(String username, String folderName, FolderChangeColorRequestDto colorRequestDto) {
+        CustomFolder folder = customFolderRepository.findByNameAndUsername(folderName, username)
+                .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
+
+        folder.setColor(colorRequestDto.getNewColor());
+
+        customFolderRepository.save(folder);
     }
 
     @SneakyThrows
@@ -224,5 +234,4 @@ public class FolderService {
 
         return formattedSize;
     }
-
 }

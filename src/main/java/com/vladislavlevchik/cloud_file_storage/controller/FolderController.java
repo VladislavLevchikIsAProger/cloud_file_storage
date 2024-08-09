@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FolderChangeColorRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRenameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
@@ -65,6 +66,20 @@ public class FolderController {
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Folder successful renamed")
+                .build());
+    }
+
+    @PatchMapping("/color/{folderName}")
+    public ResponseEntity<?> changeColor(
+            @PathVariable String folderName,
+            @RequestBody FolderChangeColorRequestDto colorRequestDto){
+
+        String username = getUserNameFromPrincipal();
+
+        service.updateColor(username, folderName, colorRequestDto);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Folder color successful change")
                 .build());
     }
 

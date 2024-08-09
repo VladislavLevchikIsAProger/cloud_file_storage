@@ -10,8 +10,10 @@ import java.util.Optional;
 public interface CustomFolderRepository extends JpaRepository<CustomFolder, Long> {
 
     @Query("SELECT cf.color FROM CustomFolder cf WHERE cf.name = :name AND cf.user.username = :username")
-    String findColorByNameAndUsername(@Param("name") String name, @Param("username") String username);
+    String findColorByNameAndUsername(@Param("name") String name,
+                                      @Param("username") String username);
 
     @Query("SELECT cf FROM CustomFolder cf WHERE cf.name = :name AND cf.user.username = :username")
-    Optional<CustomFolder> findByNameAndUsername(@Param("name") String name, @Param("username") String username);
+    Optional<CustomFolder> findByNameAndUsername(@Param("name") String name,
+                                                 @Param("username") String username);
 }
