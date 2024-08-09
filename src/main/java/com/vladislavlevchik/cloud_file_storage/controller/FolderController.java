@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRenameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
@@ -52,6 +53,21 @@ public class FolderController {
 
         return ResponseEntity.ok(service.getListForMove(username));
     }
+
+    @PatchMapping("{folderName}")
+    public ResponseEntity<?> renameFolder(
+            @PathVariable String folderName,
+            @RequestBody FolderRenameRequestDto renameRequestDto){
+
+        String username = getUserNameFromPrincipal();
+
+        service.updateName(username, folderName, renameRequestDto);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Folder successful renamed")
+                .build());
+    }
+
 
     private String getUserNameFromPrincipal() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

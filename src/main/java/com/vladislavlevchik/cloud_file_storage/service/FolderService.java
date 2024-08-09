@@ -1,11 +1,13 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRenameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderForMoveResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
+import com.vladislavlevchik.cloud_file_storage.exception.FolderNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.exception.UserNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
 import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
@@ -50,6 +52,77 @@ public class FolderService {
         folder.setUser(user);
 
         customFolderRepository.save(folder);
+    }
+
+    @SneakyThrows
+    public void updateName(String username, String folderName, FolderRenameRequestDto renameRequestDto) {
+
+        CustomFolder folder = customFolderRepository.findByNameAndUsername(folderName, username)
+                .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
+
+        folder.setName(renameRequestDto.getNewName());
+
+        customFolderRepository.save(folder);
+
+        String newFolderName = renameRequestDto.getNewName();
+
+        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
+        String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName;
+
+        Iterable<Result<Item>> items = recursivelyTraverseFolders(oldFolderPrefix);
+
+        for (Result<Item> result: items){
+            Item item = result.get();
+            String oldObjectName = item.objectName();
+            String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
+
+            minioClient.copyObject(
+                    CopyObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(newObjectName)
+                            .source(CopySource.builder()
+                                    .bucket(bucketName)
+                                    .object(oldObjectName)
+                                    .build())
+                            .build()
+            );
+
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(item.objectName())
+                            .build()
+            );
+        }
+
+        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + folderName;
+        String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName;
+
+        items = recursivelyTraverseFolders(deletedOldFolderPrefix);
+
+        for (Result<Item> result : items) {
+            Item item = result.get();
+            String oldObjectName = item.objectName();
+            String newObjectName = oldObjectName.replace(deletedOldFolderPrefix, deletedNewFolderPrefix);
+
+            minioClient.copyObject(
+                    CopyObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(newObjectName)
+                            .source(CopySource.builder()
+                                    .bucket(bucketName)
+                                    .object(oldObjectName)
+                                    .build())
+                            .build()
+            );
+
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(item.objectName())
+                            .build()
+            );
+        }
     }
 
     @SneakyThrows
