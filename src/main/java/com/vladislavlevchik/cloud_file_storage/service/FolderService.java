@@ -4,22 +4,17 @@ import com.vladislavlevchik.cloud_file_storage.dto.request.*;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderForMoveResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
-import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.exception.FolderNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
-import com.vladislavlevchik.cloud_file_storage.repository.UserRepository;
 import com.vladislavlevchik.cloud_file_storage.util.BytesConverter;
 import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
-import io.minio.*;
+import io.minio.Result;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,53 +35,55 @@ public class FolderService {
     public void createFolder(String username, FolderRequestDto dto) {
         CustomFolder folder = mapper.map(dto, CustomFolder.class);
 
-        User user = userService.getUser(username);
-
-        folder.setUser(user);
+        folder.setUser(userService.getUser(username));
 
         customFolderRepository.save(folder);
     }
 
     @SneakyThrows
     public void updateName(String username, String folderName, FolderRenameRequestDto renameRequestDto) {
-
-        CustomFolder folder = customFolderRepository.findByNameAndUsername(folderName, username)
-                .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
+        CustomFolder folder = findFolder(username, folderName);
 
         folder.setName(renameRequestDto.getNewName());
+
         customFolderRepository.save(folder);
 
-        String newFolderName = renameRequestDto.getNewName();
+        updateFolderName(username, folderName, renameRequestDto.getNewName());
+    }
 
-        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
+    @SneakyThrows
+    public void updateSubfolderName(String username, String folderName, SubFolderRenameRequestDto renameRequestDto) {
+        updateFolderName(username, folderName, renameRequestDto.getNewName());
+    }
+
+    private void updateFolderName(String username, String oldFolderName, String newFolderName) {
+        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + oldFolderName;
         String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName;
 
         moveFolderContents(oldFolderPrefix, newFolderPrefix);
 
-        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + folderName;
+        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + oldFolderName;
         String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName;
 
         moveFolderContents(deletedOldFolderPrefix, deletedNewFolderPrefix);
     }
 
     @SneakyThrows
-    public void updateSubfolderName(String username, String folderName, SubFolderRenameRequestDto renameRequestDto) {
-        String newFolderName = renameRequestDto.getNewName();
+    private void moveFolderContents(String oldFolderPrefix, String newFolderPrefix) {
+        Iterable<Result<Item>> items = minio.listObjects(oldFolderPrefix);
 
-        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
-        String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName;
+        for (Result<Item> result : items) {
+            Item item = result.get();
+            String oldObjectName = item.objectName();
+            String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
 
-        moveFolderContents(oldFolderPrefix, newFolderPrefix);
-
-        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + folderName;
-        String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName;
-
-        moveFolderContents(deletedOldFolderPrefix, deletedNewFolderPrefix);
+            minio.copy(oldObjectName, newObjectName);
+            minio.remove(oldObjectName);
+        }
     }
 
     public void updateColor(String username, String folderName, FolderChangeColorRequestDto colorRequestDto) {
-        CustomFolder folder = customFolderRepository.findByNameAndUsername(folderName, username)
-                .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
+        CustomFolder folder = findFolder(username, folderName);
 
         folder.setColor(colorRequestDto.getNewColor());
         customFolderRepository.save(folder);
@@ -122,8 +119,7 @@ public class FolderService {
 
     @SneakyThrows
     public void deleteFolder(String username, String folderName) {
-        CustomFolder folder = customFolderRepository.findByNameAndUsername(folderName, username)
-                .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
+        CustomFolder folder = findFolder(username, folderName);
 
         customFolderRepository.delete(folder);
 
@@ -165,18 +161,9 @@ public class FolderService {
         return customFolderRepository.findColorByNameAndUsername(folderName, username);
     }
 
-    @SneakyThrows
-    private void moveFolderContents(String oldFolderPrefix, String newFolderPrefix) {
-        Iterable<Result<Item>> items = minio.listObjects(oldFolderPrefix);
-
-        for (Result<Item> result : items) {
-            Item item = result.get();
-            String oldObjectName = item.objectName();
-            String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
-
-            minio.copy(oldObjectName, newObjectName);
-            minio.remove(oldObjectName);
-        }
+    private CustomFolder findFolder(String username, String folderName) {
+        return customFolderRepository.findByNameAndUsername(folderName, username)
+                .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
     }
 
     @SneakyThrows
