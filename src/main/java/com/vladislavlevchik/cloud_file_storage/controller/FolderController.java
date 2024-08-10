@@ -30,17 +30,6 @@ public class FolderController {
                 .build());
     }
 
-    @PostMapping("/create/subfolder")
-    public ResponseEntity<?> createSubFolder(@RequestBody SubFolderRequestDto subFolderRequestDto) {
-        String username = getUserNameFromPrincipal();
-
-        service.createSubFolder(username, subFolderRequestDto);
-
-        return ResponseEntity.ok(MessageResponseDto.builder()
-                .message("Subfolder successfully created")
-                .build());
-    }
-
     @GetMapping
     public ResponseEntity<?> listFolders() {
         String username = getUserNameFromPrincipal();
@@ -66,19 +55,6 @@ public class FolderController {
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Folder successful renamed")
-                .build());
-    }
-
-    @PatchMapping("/subfolders")
-    public ResponseEntity<?> renameSubfolder(
-            @RequestBody SubFolderRenameRequestDto renameRequestDto) {
-
-        String username = getUserNameFromPrincipal();
-
-        service.updateSubfolderName(username, renameRequestDto.getOldName(), renameRequestDto);
-
-        return ResponseEntity.ok(MessageResponseDto.builder()
-                .message("Subfolder successful renamed")
                 .build());
     }
 
