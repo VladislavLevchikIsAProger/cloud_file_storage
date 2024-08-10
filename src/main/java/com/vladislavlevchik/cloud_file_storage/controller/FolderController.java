@@ -83,6 +83,17 @@ public class FolderController {
                 .build());
     }
 
+    @DeleteMapping("{folderName}")
+    public ResponseEntity<?> deleteFolder(@PathVariable String folderName){
+        String username = getUserNameFromPrincipal();
+
+        service.deleteFolder(username, folderName);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Folder successful deleted")
+                .build());
+    }
+
 
     private String getUserNameFromPrincipal() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

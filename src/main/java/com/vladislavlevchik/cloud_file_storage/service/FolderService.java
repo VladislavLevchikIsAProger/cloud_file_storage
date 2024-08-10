@@ -108,6 +108,47 @@ public class FolderService {
         minio.createEmptyPackage(folderPath);
     }
 
+    @SneakyThrows
+    public void deleteFolder(String username, String folderName) {
+        CustomFolder folder = customFolderRepository.findByNameAndUsername(folderName, username)
+                .orElseThrow(() -> new FolderNotFoundException("Folder " + folderName + " not found"));
+
+        customFolderRepository.delete(folder);
+
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
+
+        String deleteFolder = USER_PACKAGE_PREFIX + username + "/deleted";
+
+        Iterable<Result<Item>> items = minio.listObjects(folderPrefix);
+
+        for (Result<Item> result : items) {
+            Item item = result.get();
+            String oldFileName = item.objectName();
+
+            String newFilename = deleteFolder + "/" + getFileName(oldFileName);
+
+            if (oldFileName.endsWith(".empty")) {
+                minio.remove(oldFileName);
+                continue;
+            }
+
+            minio.copy(oldFileName, newFilename);
+            minio.remove(oldFileName);
+        }
+
+        items = minio.listObjects(deleteFolder + "/" + folderName);
+
+        for (Result<Item> result : items) {
+            Item item = result.get();
+
+            String oldFileName = item.objectName();
+            String newFilename = deleteFolder + "/" + getFileName(oldFileName);
+
+            minio.copy(oldFileName, newFilename);
+            minio.remove(oldFileName);
+        }
+    }
+
     public String getFolderColor(String folderName, String username) {
         return customFolderRepository.findColorByNameAndUsername(folderName, username);
     }
@@ -147,5 +188,10 @@ public class FolderService {
                 .size(bytesConverter.convertToMbOrKb(totalSize))
                 .filesNumber(String.valueOf(itemCount))
                 .build();
+    }
+
+    private String getFileName(String filePath) {
+        int lastSlashIndex = filePath.lastIndexOf('/');
+        return (lastSlashIndex == -1) ? filePath : filePath.substring(lastSlashIndex + 1);
     }
 }
