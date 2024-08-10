@@ -154,7 +154,7 @@ public class FileService {
         List<String> folders = new ArrayList<>();
         List<FileResponseDto> files = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderPath;
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderPath + "/";
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
@@ -164,12 +164,20 @@ public class FileService {
             String objectName = item.objectName();
 
             if (objectName.endsWith(".empty")) {
+                String relativePath = objectName.substring(folderPrefix.length());
+
+                int index = relativePath.indexOf('/');
+                String subPath = relativePath.substring(0, index);
+
+                if (!folders.contains(subPath)) {
+                    folders.add(subPath);
+                }
                 continue;
             }
 
             String formattedSize = convertBytesToMbOrKb(item.size());
 
-            String relativePath = objectName.substring(folderPrefix.length() + 1);
+            String relativePath = objectName.substring(folderPrefix.length());
 
             if (relativePath.contains("/")) {
                 int index = relativePath.indexOf('/');
