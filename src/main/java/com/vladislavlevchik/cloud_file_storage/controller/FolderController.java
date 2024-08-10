@@ -1,9 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.FolderChangeColorRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRenameRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.*;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.FolderService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/v1/folders")
@@ -42,14 +42,14 @@ public class FolderController {
     }
 
     @GetMapping
-    public ResponseEntity<?> listFolders(){
+    public ResponseEntity<?> listFolders() {
         String username = getUserNameFromPrincipal();
 
         return ResponseEntity.ok(service.getList(username));
     }
 
     @GetMapping("/moved")
-    public ResponseEntity<?> listFoldersForMove(){
+    public ResponseEntity<?> listFoldersForMove() {
         String username = getUserNameFromPrincipal();
 
         return ResponseEntity.ok(service.getListForMove(username));
@@ -58,7 +58,7 @@ public class FolderController {
     @PatchMapping("{folderName}")
     public ResponseEntity<?> renameFolder(
             @PathVariable String folderName,
-            @RequestBody FolderRenameRequestDto renameRequestDto){
+            @RequestBody FolderRenameRequestDto renameRequestDto) {
 
         String username = getUserNameFromPrincipal();
 
@@ -69,10 +69,23 @@ public class FolderController {
                 .build());
     }
 
+    @PatchMapping("/subfolders")
+    public ResponseEntity<?> renameSubfolder(
+            @RequestBody SubFolderRenameRequestDto renameRequestDto) {
+
+        String username = getUserNameFromPrincipal();
+
+        service.updateSubfolderName(username, renameRequestDto.getOldName(), renameRequestDto);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Subfolder successful renamed")
+                .build());
+    }
+
     @PatchMapping("/color/{folderName}")
     public ResponseEntity<?> changeColor(
             @PathVariable String folderName,
-            @RequestBody FolderChangeColorRequestDto colorRequestDto){
+            @RequestBody FolderChangeColorRequestDto colorRequestDto) {
 
         String username = getUserNameFromPrincipal();
 
@@ -84,7 +97,7 @@ public class FolderController {
     }
 
     @DeleteMapping("{folderName}")
-    public ResponseEntity<?> deleteFolder(@PathVariable String folderName){
+    public ResponseEntity<?> deleteFolder(@PathVariable String folderName) {
         String username = getUserNameFromPrincipal();
 
         service.deleteFolder(username, folderName);

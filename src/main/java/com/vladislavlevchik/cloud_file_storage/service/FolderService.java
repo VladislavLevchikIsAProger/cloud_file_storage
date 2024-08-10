@@ -1,9 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.FolderChangeColorRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRenameRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.FolderRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.*;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderForMoveResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
@@ -59,6 +56,21 @@ public class FolderService {
         folder.setName(renameRequestDto.getNewName());
         customFolderRepository.save(folder);
 
+        String newFolderName = renameRequestDto.getNewName();
+
+        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
+        String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName;
+
+        moveFolderContents(oldFolderPrefix, newFolderPrefix);
+
+        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + folderName;
+        String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName;
+
+        moveFolderContents(deletedOldFolderPrefix, deletedNewFolderPrefix);
+    }
+
+    @SneakyThrows
+    public void updateSubfolderName(String username, String folderName, SubFolderRenameRequestDto renameRequestDto) {
         String newFolderName = renameRequestDto.getNewName();
 
         String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
