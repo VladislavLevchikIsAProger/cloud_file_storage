@@ -73,7 +73,7 @@ public class FileService {
 
         for (MultipartFile file : files) {
             String fileKey = (path.isEmpty())
-                    ? USER_PACKAGE_PREFIX + username + path + "/" + file.getOriginalFilename()
+                    ? USER_PACKAGE_PREFIX + username + "/" + file.getOriginalFilename()
                     : USER_PACKAGE_PREFIX + username + "/" + path + "/" + file.getOriginalFilename();
 
             minio.put(fileKey, file.getInputStream(), file.getSize(), file.getContentType());
@@ -99,7 +99,7 @@ public class FileService {
 
             String formattedSize = convertBytesToMbOrKb(item.size());
 
-            if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + "/deleted")) {
+            if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + "/deleted/")) {
                 String mainSubdirectory = getMainSubdirectory(objectName);
 
                 String folderColor = folderService.getFolderColor(mainSubdirectory, username);
@@ -125,7 +125,7 @@ public class FileService {
     public List<FileResponseDto> listFilesInDeleted(String username) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted";
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/";
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
@@ -206,14 +206,14 @@ public class FileService {
 
     @SneakyThrows
     public void deleteFiles(String username, List<FileDeleteRequestDto> files) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted";
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/";
 
         List<String> paths = new ArrayList<>();
 
         for (FileDeleteRequestDto file : files) {
             String filePath = (file.getFilePath().isEmpty())
-                    ? USER_PACKAGE_PREFIX + username + "/deleted/" + file.getFilename()
-                    : USER_PACKAGE_PREFIX + username + "/deleted/" + file.getFilePath() + "/" + file.getFilename();
+                    ? folderPrefix + file.getFilename()
+                    : folderPrefix + file.getFilePath() + "/" + file.getFilename();
             paths.add(filePath);
         }
 
@@ -266,14 +266,14 @@ public class FileService {
 
     @SneakyThrows
     public void recoverFiles(String username, List<FileRecoverRequestDto> files) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted";
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/";
 
         Map<String, String> pathsMap = new HashMap<>();
 
         for (FileRecoverRequestDto file : files) {
             String sourcePath = (file.getFilePath().isEmpty())
-                    ? folderPrefix + "/" + file.getFilename()
-                    : folderPrefix + "/" + file.getFilePath() + "/" + file.getFilename();
+                    ? folderPrefix + file.getFilename()
+                    : folderPrefix + file.getFilePath() + "/" + file.getFilename();
 
             String destinationPath = (file.getFilePath().isEmpty())
                     ? USER_PACKAGE_PREFIX + username + "/" + file.getFilename()

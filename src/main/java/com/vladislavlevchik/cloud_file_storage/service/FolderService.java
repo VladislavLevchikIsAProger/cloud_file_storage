@@ -57,13 +57,13 @@ public class FolderService {
     }
 
     private void updateFolderName(String username, String oldFolderName, String newFolderName) {
-        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + oldFolderName;
-        String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName;
+        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + oldFolderName + "/";
+        String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName + "/";
 
         moveFolderContents(oldFolderPrefix, newFolderPrefix);
 
-        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + oldFolderName;
-        String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName;
+        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + oldFolderName + "/";
+        String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName + "/";
 
         moveFolderContents(deletedOldFolderPrefix, deletedNewFolderPrefix);
     }
@@ -91,7 +91,7 @@ public class FolderService {
 
     @SneakyThrows
     public List<FolderResponseDto> getList(String username) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username;
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
 
         List<CustomFolder> folders = userService.getListFolders(username);
 
@@ -123,9 +123,9 @@ public class FolderService {
 
         customFolderRepository.delete(folder);
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName;
+        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName + "/";
 
-        String deleteFolder = USER_PACKAGE_PREFIX + username + "/deleted";
+        String deleteFolder = USER_PACKAGE_PREFIX + username + "/deleted/";
 
         Iterable<Result<Item>> items = minio.listObjects(folderPrefix);
 
@@ -133,7 +133,7 @@ public class FolderService {
             Item item = result.get();
             String oldFileName = item.objectName();
 
-            String newFilename = deleteFolder + "/" + getFileName(oldFileName);
+            String newFilename = deleteFolder + getFileName(oldFileName);
 
             if (oldFileName.endsWith(".empty")) {
                 minio.remove(oldFileName);
@@ -144,13 +144,13 @@ public class FolderService {
             minio.remove(oldFileName);
         }
 
-        items = minio.listObjects(deleteFolder + "/" + folderName);
+        items = minio.listObjects(deleteFolder + folderName);
 
         for (Result<Item> result : items) {
             Item item = result.get();
 
             String oldFileName = item.objectName();
-            String newFilename = deleteFolder + "/" + getFileName(oldFileName);
+            String newFilename = deleteFolder + getFileName(oldFileName);
 
             minio.copy(oldFileName, newFilename);
             minio.remove(oldFileName);
@@ -168,7 +168,7 @@ public class FolderService {
 
     @SneakyThrows
     private FolderResponseDto getFolderResponse(String folderPrefix, CustomFolder folder) {
-        Iterable<Result<Item>> results = minio.listObjects(folderPrefix + "/" + folder.getName());
+        Iterable<Result<Item>> results = minio.listObjects(folderPrefix + folder.getName() + "/");
 
         long totalSize = 0;
         long itemCount = 0;
