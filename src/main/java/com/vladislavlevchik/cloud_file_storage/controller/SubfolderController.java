@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
+import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderDeleteRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRenameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
@@ -38,6 +39,19 @@ public class SubfolderController {
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Subfolder successful renamed")
+                .build());
+    }
+
+    @DeleteMapping()
+    public ResponseEntity<?> deleteSubfolder(
+            @RequestBody SubFolderDeleteRequestDto deleteRequestDto) {
+
+        String username = getUserNameFromPrincipal();
+
+        service.deleteSubFolder(username, deleteRequestDto.getFolderPath());
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Subfolder successful deleted")
                 .build());
     }
 

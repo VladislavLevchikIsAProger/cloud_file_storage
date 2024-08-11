@@ -123,6 +123,16 @@ public class FolderService {
 
         customFolderRepository.delete(folder);
 
+        delete(username, folderName);
+    }
+
+    @SneakyThrows
+    public void deleteSubFolder(String username, String folderName) {
+        delete(username, folderName);
+    }
+
+    @SneakyThrows
+    private void delete(String username, String folderName) {
         String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName + "/";
 
         String deleteFolder = USER_PACKAGE_PREFIX + username + "/deleted/";
