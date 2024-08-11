@@ -1,12 +1,9 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
 import com.vladislavlevchik.cloud_file_storage.dto.request.*;
-import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.MemoryResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.TimeResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.*;
+import com.vladislavlevchik.cloud_file_storage.util.BytesConverter;
 import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
-import io.minio.MinioClient;
 import io.minio.Result;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,22 +27,18 @@ import static java.math.RoundingMode.HALF_UP;
 @RequiredArgsConstructor
 public class FileService {
 
-    private final MinioClient minioClient;
     private final MinioOperationUtil minio;
-
-    @Value("${minio.bucket.name}")
-    private final String bucketName;
 
     @Value("${minio.user.memory}")
     private final int userMemory;
 
     private final FolderService folderService;
 
-    private final static String USER_PACKAGE_PREFIX = "user-";
-    private static final long MEGABYTE = 1_048_576; // 1024 * 1024
-    private static final long KILOBYTE = 1_024; // 1024
+    private final BytesConverter bytesConverter;
 
-    //TODO тоже с ексепшенами поработать
+    private final static String USER_PACKAGE_PREFIX = "user-";
+    private final static String DELETED_FOLDER = "/deleted/";
+
     @SneakyThrows
     public MemoryResponseDto getMemoryInfo(String username) {
         String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
@@ -63,8 +58,6 @@ public class FileService {
                 .build();
     }
 
-    //TODO потом надо нормально работу с ошибками обработать
-    //TODO мб у нас не будет загрузки сразу в папку, поэтому мб придется без path делать
     @SneakyThrows
     public void uploadFile(String username, String path, List<MultipartFile> files) {
         if (path == null || path.trim().isEmpty()) {
@@ -97,9 +90,9 @@ public class FileService {
                 continue;
             }
 
-            String formattedSize = convertBytesToMbOrKb(item.size());
+            String formattedSize = bytesConverter.convertToMbOrKb(item.size());
 
-            if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + "/deleted/")) {
+            if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + DELETED_FOLDER)) {
                 String mainSubdirectory = getMainSubdirectory(objectName);
 
                 String folderColor = folderService.getFolderColor(mainSubdirectory, username);
@@ -125,7 +118,7 @@ public class FileService {
     public List<FileResponseDto> listFilesInDeleted(String username) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/";
+        String folderPrefix = USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
@@ -134,7 +127,7 @@ public class FileService {
 
             String objectName = item.objectName();
 
-            String formattedSize = convertBytesToMbOrKb(item.size());
+            String formattedSize = bytesConverter.convertToMbOrKb(item.size());
 
             fileList.add(
                     FileResponseDto.builder()
@@ -151,8 +144,11 @@ public class FileService {
 
     @SneakyThrows
     public FileAndFolderResponseDto listFilesAndDirectories(String username, String folderPath) {
-        List<String> folders = new ArrayList<>();
+        Map<String, Long> folderSizes = new HashMap<>();
+        Map<String, ZonedDateTime> folderLastModified = new HashMap<>();
+
         List<FileResponseDto> files = new ArrayList<>();
+        List<SubFolderSizeResponseDto> folders = new ArrayList<>();
 
         String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderPath + "/";
 
@@ -160,33 +156,32 @@ public class FileService {
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
-
             String objectName = item.objectName();
+            String relativePath = objectName.substring(folderPrefix.length());
 
             if (objectName.endsWith(".empty")) {
-                String relativePath = objectName.substring(folderPrefix.length());
-
                 int index = relativePath.indexOf('/');
-                String subPath = relativePath.substring(0, index);
 
-                if (!folders.contains(subPath)) {
-                    folders.add(subPath);
+                if (index > 0) {
+                    String subPath = relativePath.substring(0, index);
+
+                    folderSizes.putIfAbsent(subPath, 0L);
+                    folderLastModified.putIfAbsent(subPath, item.lastModified());
                 }
                 continue;
             }
 
-            String formattedSize = convertBytesToMbOrKb(item.size());
-
-            String relativePath = objectName.substring(folderPrefix.length());
+            String formattedSize = bytesConverter.convertToMbOrKb(item.size());
 
             if (relativePath.contains("/")) {
                 int index = relativePath.indexOf('/');
                 String subPath = relativePath.substring(0, index);
 
-                if (!folders.contains(subPath)) {
-                    folders.add(subPath);
-                }
+                folderSizes.put(subPath, folderSizes.getOrDefault(subPath, 0L) + item.size());
 
+                ZonedDateTime currentLastModified = folderLastModified.getOrDefault(subPath, ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault()));
+
+                folderLastModified.put(subPath, currentLastModified.isAfter(item.lastModified()) ? currentLastModified : item.lastModified());
             } else {
                 files.add(FileResponseDto.builder()
                         .filename(relativePath)
@@ -195,7 +190,17 @@ public class FileService {
                         .lastModified(createTimeResponseDto(item.lastModified()))
                         .build());
             }
+        }
 
+        for (Map.Entry<String, Long> entry : folderSizes.entrySet()) {
+            String folderName = entry.getKey();
+            String folderSize = bytesConverter.convertToMbOrKb(entry.getValue());
+            ZonedDateTime lastModified = folderLastModified.get(folderName);
+            folders.add(SubFolderSizeResponseDto.builder()
+                    .name(folderName)
+                    .size(folderSize)
+                    .lastModified(createTimeResponseDto(lastModified))
+                    .build());
         }
 
         return FileAndFolderResponseDto.builder()
@@ -206,7 +211,7 @@ public class FileService {
 
     @SneakyThrows
     public void deleteFiles(String username, List<FileDeleteRequestDto> files) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/";
+        String folderPrefix = USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
 
         List<String> paths = new ArrayList<>();
 
@@ -266,7 +271,7 @@ public class FileService {
 
     @SneakyThrows
     public void recoverFiles(String username, List<FileRecoverRequestDto> files) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/";
+        String folderPrefix = USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
 
         Map<String, String> pathsMap = new HashMap<>();
 
@@ -361,20 +366,6 @@ public class FileService {
     private String getFileName(String filePath) {
         int lastSlashIndex = filePath.lastIndexOf('/');
         return (lastSlashIndex == -1) ? filePath : filePath.substring(lastSlashIndex + 1);
-    }
-
-    private String convertBytesToMbOrKb(long sizeInBytes) {
-        String formattedSize;
-
-        if (sizeInBytes >= MEGABYTE) {
-            double sizeInMB = sizeInBytes / (double) MEGABYTE;
-            formattedSize = String.format("%.2fMB", sizeInMB);
-        } else {
-            double sizeInKB = sizeInBytes / (double) KILOBYTE;
-            formattedSize = String.format("%.2fKB", sizeInKB);
-        }
-
-        return formattedSize;
     }
 
     private TimeResponseDto createTimeResponseDto(ZonedDateTime time) {
