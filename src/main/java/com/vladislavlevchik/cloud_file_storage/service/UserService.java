@@ -1,6 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.UserRegisterRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.user.UserRegisterRequestDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.entity.User;
 import com.vladislavlevchik.cloud_file_storage.exception.UserNotFoundException;

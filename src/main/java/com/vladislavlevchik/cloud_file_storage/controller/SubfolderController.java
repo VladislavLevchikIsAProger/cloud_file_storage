@@ -1,8 +1,8 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderDeleteRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRenameRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.SubFolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderDeleteRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderRenameRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.FolderService;
 import lombok.RequiredArgsConstructor;

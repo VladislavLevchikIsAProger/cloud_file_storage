@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto.response;
+package com.vladislavlevchik.cloud_file_storage.dto.request.file;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,13 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileResponseDto {
+public class FileDeleteRequestDto {
 
     private String filename;
     private String filePath;
-    private String size;
-    private TimeResponseDto lastModified;
-    private String color;
-    private String customFolderName;
 
 }

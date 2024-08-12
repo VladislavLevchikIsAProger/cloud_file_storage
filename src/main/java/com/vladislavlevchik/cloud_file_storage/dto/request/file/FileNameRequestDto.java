@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto.request;
+package com.vladislavlevchik.cloud_file_storage.dto.request.file;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileMoveToDeletedRequestDto {
+public class FileNameRequestDto {
 
     private String filename;
-    private String filePath;
-    private String newFilePath;
 
 }

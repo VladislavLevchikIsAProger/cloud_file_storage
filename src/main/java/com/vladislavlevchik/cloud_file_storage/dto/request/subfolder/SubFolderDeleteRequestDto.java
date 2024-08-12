@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto.response;
+package com.vladislavlevchik.cloud_file_storage.dto.request.subfolder;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FolderForMoveResponseDto {
+public class SubFolderDeleteRequestDto {
 
-    private String name;
-    private String color;
+    private String folderPath;
 
 }

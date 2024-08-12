@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto.request;
+package com.vladislavlevchik.cloud_file_storage.dto.request.subfolder;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FolderChangeColorRequestDto {
+public class SubFolderRenameRequestDto {
 
-    private String newColor;
+    private String oldName;
+    private String newName;
 
 }

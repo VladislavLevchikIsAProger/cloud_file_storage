@@ -1,7 +1,10 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.*;
+import com.vladislavlevchik.cloud_file_storage.dto.request.file.*;
 import com.vladislavlevchik.cloud_file_storage.dto.response.*;
+import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileAndFolderResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.subfolder.SubFolderSizeResponseDto;
 import com.vladislavlevchik.cloud_file_storage.util.StringUtil;
 import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
 import io.minio.Result;
@@ -313,7 +316,30 @@ public class FileService {
 
     @SneakyThrows
     public void moveFiles(String username, FileMoveRequestDto files) {
-        processFiles(username, files.getSource(), files.getTarget(), files.getFiles(), true);
+        String sourcePath = (files.getSource().isEmpty())
+                ? USER_PACKAGE_PREFIX + username
+                : USER_PACKAGE_PREFIX + username + "/" + files.getSource();
+
+        String targetPath = USER_PACKAGE_PREFIX + username + "/" + files.getTarget() + "/";
+
+        List<String> pathsFiles = files.getFiles().stream()
+                .map(file -> sourcePath + "/" + file.getFilename())
+                .toList();
+
+        Iterable<Result<Item>> objects = minio.listObjects(sourcePath);
+
+        for (Result<Item> itemResult : objects) {
+            Item item = itemResult.get();
+            String fileName = item.objectName();
+
+            if (pathsFiles.contains(fileName)) {
+                String targetFilePath = targetPath + stringUtil.getFileName(fileName);
+
+                minio.copy(fileName, targetFilePath);
+
+                minio.remove(fileName);
+            }
+        }
     }
 
     @SneakyThrows
@@ -333,11 +359,6 @@ public class FileService {
 
             minio.remove(pathOldFile);
         }
-    }
-
-    @SneakyThrows
-    public void copyFiles(String username, FileCopyRequestDto files) {
-        processFiles(username, files.getSource(), files.getTarget(), files.getFiles(), false);
     }
 
     @SneakyThrows
@@ -395,36 +416,6 @@ public class FileService {
                 minio.copy(fileName, destinationPath);
 
                 minio.remove(fileName);
-            }
-        }
-    }
-
-    @SneakyThrows
-    private void processFiles(String username, String source, String target, List<FileNameRequestDto> files, boolean isMoveOperation) {
-        String sourcePath = (source.isEmpty())
-                ? USER_PACKAGE_PREFIX + username
-                : USER_PACKAGE_PREFIX + username + "/" + source;
-
-        String targetPath = USER_PACKAGE_PREFIX + username + "/" + target + "/";
-
-        List<String> pathsFiles = files.stream()
-                .map(file -> sourcePath + "/" + file.getFilename())
-                .toList();
-
-        Iterable<Result<Item>> objects = minio.listObjects(sourcePath);
-
-        for (Result<Item> itemResult : objects) {
-            Item item = itemResult.get();
-            String fileName = item.objectName();
-
-            if (pathsFiles.contains(fileName)) {
-                String targetFilePath = targetPath + stringUtil.getFileName(fileName);
-
-                minio.copy(fileName, targetFilePath);
-
-                if (isMoveOperation) {
-                    minio.remove(fileName);
-                }
             }
         }
     }

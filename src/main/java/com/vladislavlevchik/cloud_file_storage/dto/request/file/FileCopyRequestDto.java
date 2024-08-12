@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto.request;
+package com.vladislavlevchik.cloud_file_storage.dto.request.file;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,9 +11,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileMoveRequestDto {
+public class FileCopyRequestDto {
 
     private String source;
     private String target;
     private List<FileNameRequestDto> files;
+
 }

@@ -1,6 +1,8 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.*;
+import com.vladislavlevchik.cloud_file_storage.dto.request.folder.FolderChangeColorRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.folder.FolderRenameRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.folder.FolderRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.FolderService;
 import lombok.RequiredArgsConstructor;
@@ -8,9 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/v1/folders")

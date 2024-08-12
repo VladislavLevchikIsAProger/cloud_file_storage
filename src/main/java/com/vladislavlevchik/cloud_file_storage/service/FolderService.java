@@ -1,8 +1,12 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.*;
-import com.vladislavlevchik.cloud_file_storage.dto.response.FolderForMoveResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.folder.FolderChangeColorRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.folder.FolderRenameRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.folder.FolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderRenameRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.folder.FolderForMoveResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.folder.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.exception.FolderNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;

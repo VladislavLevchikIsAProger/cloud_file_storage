@@ -1,7 +1,7 @@
 package com.vladislavlevchik.cloud_file_storage.service;
 
 import com.vladislavlevchik.cloud_file_storage.dto.response.StatusResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.request.UserLoginRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.user.UserLoginRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

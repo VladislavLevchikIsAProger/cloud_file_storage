@@ -1,8 +1,8 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
-import com.vladislavlevchik.cloud_file_storage.dto.request.*;
-import com.vladislavlevchik.cloud_file_storage.dto.response.FileAndFolderResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.FileResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.request.file.*;
+import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileAndFolderResponseDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.FileService;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,6 @@ public class FileController {
         return ResponseEntity.ok(MessageResponseDto.builder().message("File uploaded successfully").build());
     }
 
-    //TODO валидация не сделана
     @GetMapping("/files/memory")
     public ResponseEntity<?> userMemoryInfo() {
         String username = getUserNameFromPrincipal();
@@ -53,8 +52,7 @@ public class FileController {
     public ResponseEntity<?> listFilesInDeleteFolder() {
         String username = getUserNameFromPrincipal();
 
-        List<FileResponseDto> files = service.listFilesInDeleted(username);
-        return ResponseEntity.ok(files);
+        return ResponseEntity.ok(service.listFilesInDeleted(username));
     }
 
     @GetMapping("/files")
@@ -98,18 +96,6 @@ public class FileController {
 
         return ResponseEntity.ok(MessageResponseDto.builder()
                 .message("Files successfully moved to deleted")
-                .build()
-        );
-    }
-
-    @PostMapping("/files/copy")
-    public ResponseEntity<?> copyFiles(@RequestBody FileCopyRequestDto fileCopyRequestDto) {
-        String username = getUserNameFromPrincipal();
-
-        service.copyFiles(username, fileCopyRequestDto);
-
-        return ResponseEntity.ok(MessageResponseDto.builder()
-                .message("Files successfully copied")
                 .build()
         );
     }

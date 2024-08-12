@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto.response;
+package com.vladislavlevchik.cloud_file_storage.dto.response.folder;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SubFolderSizeResponseDto {
+public class FolderForMoveResponseDto {
 
     private String name;
-    private String size;
-    private TimeResponseDto lastModified;
+    private String color;
 
 }

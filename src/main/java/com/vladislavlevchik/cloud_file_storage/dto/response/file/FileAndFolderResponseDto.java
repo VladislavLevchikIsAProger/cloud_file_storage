@@ -1,5 +1,6 @@
-package com.vladislavlevchik.cloud_file_storage.dto.response;
+package com.vladislavlevchik.cloud_file_storage.dto.response.file;
 
+import com.vladislavlevchik.cloud_file_storage.dto.response.subfolder.SubFolderSizeResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

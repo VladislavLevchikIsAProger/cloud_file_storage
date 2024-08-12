@@ -1,4 +1,4 @@
-package com.vladislavlevchik.cloud_file_storage.dto.response;
+package com.vladislavlevchik.cloud_file_storage.dto.request.folder;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,11 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FolderResponseDto {
+public class FolderRequestDto {
 
     private String name;
     private String color;
-    private String size;
-    private String filesNumber;
 
 }
