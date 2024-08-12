@@ -57,10 +57,15 @@ public class FileService {
 
     @SneakyThrows
     public void uploadFile(String username, String path, List<MultipartFile> files) {
-        String basePath = USER_PACKAGE_PREFIX + username + (path.isEmpty() ? "" : "/" + path);
+        if (path == null || path.trim().isEmpty()) {
+            path = "";
+        }
 
         for (MultipartFile file : files) {
-            String fileKey = basePath + "/" + file.getOriginalFilename();
+            String fileKey = (path.isEmpty())
+                    ? USER_PACKAGE_PREFIX + username + "/" + file.getOriginalFilename()
+                    : USER_PACKAGE_PREFIX + username + "/" + path + "/" + file.getOriginalFilename();
+
             minio.put(fileKey, file.getInputStream(), file.getSize(), file.getContentType());
         }
     }
@@ -315,25 +320,16 @@ public class FileService {
     public void moveFilesToDeleted(String username, List<FileMoveToDeletedRequestDto> files) {
         for (FileMoveToDeletedRequestDto file : files) {
             String sourcePath = (file.getFilePath().isEmpty())
-                    ? USER_PACKAGE_PREFIX + username
-                    : USER_PACKAGE_PREFIX + username + "/" + file.getFilePath();
+                    ? USER_PACKAGE_PREFIX + username + "/"
+                    : USER_PACKAGE_PREFIX + username + "/" + file.getFilePath() + "/";
 
-            String pathOldFile = sourcePath + "/" + file.getFilename();
-            String pathNewFile = sourcePath + "/deleted/" + file.getFilePath() + "/" ;
+            String pathOldFile = sourcePath + file.getFilename();
 
-            Iterable<Result<Item>> objects = minio.listObjects(pathOldFile);
+            String pathNewFile = USER_PACKAGE_PREFIX + username + "/deleted/" + (file.getFilePath().isEmpty() ? file.getFilename() : file.getFilePath() + "/" + file.getFilename());
 
-            for (Result<Item> itemResult : objects) {
-                Item item = itemResult.get();
-                String fileName = item.objectName();
+            minio.copy(pathOldFile, pathNewFile);
 
-                if (fileName.equals(pathOldFile)) {
-                    minio.copy(fileName, pathNewFile);
-
-                    minio.remove(fileName);
-                }
-
-            }
+            minio.remove(pathOldFile);
         }
     }
 
