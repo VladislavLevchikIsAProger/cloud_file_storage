@@ -325,7 +325,9 @@ public class FileService {
 
             String pathOldFile = sourcePath + file.getFilename();
 
-            String pathNewFile = USER_PACKAGE_PREFIX + username + "/deleted/" + (file.getFilePath().isEmpty() ? file.getFilename() : file.getFilePath() + "/" + file.getFilename());
+            String pathNewFile = USER_PACKAGE_PREFIX + username + "/" + file.getNewFilePath() + "/"
+                    + (file.getFilePath().isEmpty() ? file.getFilename() : file.getFilePath() + "/" + file.getFilename());
+
 
             minio.copy(pathOldFile, pathNewFile);
 
