@@ -6,7 +6,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.response.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.exception.FolderNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
-import com.vladislavlevchik.cloud_file_storage.util.BytesConverter;
+import com.vladislavlevchik.cloud_file_storage.util.StringUtil;
 import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
 import io.minio.Result;
 import io.minio.messages.Item;
@@ -27,7 +27,7 @@ public class FolderService {
 
     private final MinioOperationUtil minio;
     private final ModelMapper mapper;
-    private final BytesConverter bytesConverter;
+    private final StringUtil stringUtil;
 
     private final static String USER_PACKAGE_PREFIX = "user-";
 
@@ -143,7 +143,7 @@ public class FolderService {
             Item item = result.get();
             String oldFileName = item.objectName();
 
-            String newFilename = deleteFolder + getFileName(oldFileName);
+            String newFilename = deleteFolder + stringUtil.getFileName(oldFileName);
 
             if (oldFileName.endsWith(".empty")) {
                 minio.remove(oldFileName);
@@ -160,7 +160,7 @@ public class FolderService {
             Item item = result.get();
 
             String oldFileName = item.objectName();
-            String newFilename = deleteFolder + getFileName(oldFileName);
+            String newFilename = deleteFolder + stringUtil.getFileName(oldFileName);
 
             minio.copy(oldFileName, newFilename);
             minio.remove(oldFileName);
@@ -194,13 +194,8 @@ public class FolderService {
         return FolderResponseDto.builder()
                 .name(folder.getName())
                 .color(folder.getColor())
-                .size(bytesConverter.convertToMbOrKb(totalSize))
+                .size(stringUtil.convertBytesToMbOrKb(totalSize))
                 .filesNumber(String.valueOf(itemCount))
                 .build();
-    }
-
-    private String getFileName(String filePath) {
-        int lastSlashIndex = filePath.lastIndexOf('/');
-        return (lastSlashIndex == -1) ? filePath : filePath.substring(lastSlashIndex + 1);
     }
 }

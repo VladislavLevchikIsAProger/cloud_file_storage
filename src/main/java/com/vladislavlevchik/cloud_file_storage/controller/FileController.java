@@ -90,6 +90,18 @@ public class FileController {
         );
     }
 
+    @PostMapping("/files/move/deleted")
+    public ResponseEntity<?> moveFilesToDeleted(@RequestBody List<FileMoveToDeletedRequestDto> files) {
+        String username = getUserNameFromPrincipal();
+
+        service.moveFilesToDeleted(username, files);
+
+        return ResponseEntity.ok(MessageResponseDto.builder()
+                .message("Files successfully moved to deleted")
+                .build()
+        );
+    }
+
     @PostMapping("/files/copy")
     public ResponseEntity<?> copyFiles(@RequestBody FileCopyRequestDto fileCopyRequestDto) {
         String username = getUserNameFromPrincipal();
@@ -126,6 +138,20 @@ public class FileController {
                 .message("Files successfully renamed")
                 .build()
         );
+    }
+
+    @GetMapping("/files/search")
+    public ResponseEntity<?> searchFileInAllFiles(@RequestParam String fileName){
+        String username = getUserNameFromPrincipal();
+
+        return ResponseEntity.ok(service.searchFile(username, fileName));
+    }
+
+    @GetMapping("/files/deleted/search")
+    public ResponseEntity<?> searchFileInDeletedFiles(@RequestParam String fileName){
+        String username = getUserNameFromPrincipal();
+
+        return ResponseEntity.ok(service.searchFileInDeleted(username, fileName));
     }
 
     private String getUserNameFromPrincipal() {
