@@ -33,9 +33,6 @@ public class FolderService {
     private final ModelMapper mapper;
     private final StringUtil stringUtil;
 
-    private final static String USER_PACKAGE_PREFIX = "user-";
-
-
     public void createFolder(String username, FolderRequestDto dto) {
         CustomFolder folder = mapper.map(dto, CustomFolder.class);
 
@@ -60,32 +57,6 @@ public class FolderService {
         updateFolderName(username, folderName, renameRequestDto.getNewName());
     }
 
-    private void updateFolderName(String username, String oldFolderName, String newFolderName) {
-        String oldFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + oldFolderName + "/";
-        String newFolderPrefix = USER_PACKAGE_PREFIX + username + "/" + newFolderName + "/";
-
-        moveFolderContents(oldFolderPrefix, newFolderPrefix);
-
-        String deletedOldFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + oldFolderName + "/";
-        String deletedNewFolderPrefix = USER_PACKAGE_PREFIX + username + "/deleted/" + newFolderName + "/";
-
-        moveFolderContents(deletedOldFolderPrefix, deletedNewFolderPrefix);
-    }
-
-    @SneakyThrows
-    private void moveFolderContents(String oldFolderPrefix, String newFolderPrefix) {
-        Iterable<Result<Item>> items = minio.listObjects(oldFolderPrefix);
-
-        for (Result<Item> result : items) {
-            Item item = result.get();
-            String oldObjectName = item.objectName();
-            String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
-
-            minio.copy(oldObjectName, newObjectName);
-            minio.remove(oldObjectName);
-        }
-    }
-
     public void updateColor(String username, String folderName, FolderChangeColorRequestDto colorRequestDto) {
         CustomFolder folder = findFolder(username, folderName);
 
@@ -95,7 +66,7 @@ public class FolderService {
 
     @SneakyThrows
     public List<FolderResponseDto> getList(String username) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
+        String folderPrefix = stringUtil.getUserPrefix(username);
 
         List<CustomFolder> folders = userService.getListFolders(username);
 
@@ -115,7 +86,7 @@ public class FolderService {
 
     @SneakyThrows
     public void createSubFolder(String username, SubFolderRequestDto subFolderRequestDto) {
-        String folderPath = USER_PACKAGE_PREFIX + username + "/"
+        String folderPath = stringUtil.getUserPrefix(username)
                 + subFolderRequestDto.getFolderPath() + "/" + subFolderRequestDto.getName() + "/";
 
         minio.createEmptyPackage(folderPath);
@@ -137,9 +108,9 @@ public class FolderService {
 
     @SneakyThrows
     private void delete(String username, String folderName) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderName + "/";
+        String folderPrefix = stringUtil.getUserPrefix(username) + folderName + "/";
 
-        String deleteFolder = USER_PACKAGE_PREFIX + username + "/deleted/";
+        String deleteFolder = stringUtil.getUserDeletedPrefix(username);
 
         Iterable<Result<Item>> items = minio.listObjects(folderPrefix);
 
@@ -173,6 +144,32 @@ public class FolderService {
 
     public String getFolderColor(String folderName, String username) {
         return customFolderRepository.findColorByNameAndUsername(folderName, username);
+    }
+
+    private void updateFolderName(String username, String oldFolderName, String newFolderName) {
+        String oldFolderPrefix = stringUtil.getUserPrefix(username) + oldFolderName + "/";
+        String newFolderPrefix = stringUtil.getUserPrefix(username)  + "/" + newFolderName + "/";
+
+        moveFolderContents(oldFolderPrefix, newFolderPrefix);
+
+        String deletedOldFolderPrefix = stringUtil.getUserDeletedPrefix(username) + oldFolderName + "/";
+        String deletedNewFolderPrefix = stringUtil.getUserDeletedPrefix(username) + newFolderName + "/";
+
+        moveFolderContents(deletedOldFolderPrefix, deletedNewFolderPrefix);
+    }
+
+    @SneakyThrows
+    private void moveFolderContents(String oldFolderPrefix, String newFolderPrefix) {
+        Iterable<Result<Item>> items = minio.listObjects(oldFolderPrefix);
+
+        for (Result<Item> result : items) {
+            Item item = result.get();
+            String oldObjectName = item.objectName();
+            String newObjectName = oldObjectName.replace(oldFolderPrefix, newFolderPrefix);
+
+            minio.copy(oldObjectName, newObjectName);
+            minio.remove(oldObjectName);
+        }
     }
 
     private CustomFolder findFolder(String username, String folderName) {

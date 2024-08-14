@@ -4,8 +4,23 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StringUtil {
+
+    private final static String USER_PACKAGE_PREFIX = "user-";
+    private final static String DELETED_FOLDER = "/deleted/";
     private static final long MEGABYTE = 1_048_576; // 1024 * 1024
     private static final long KILOBYTE = 1_024; // 1024
+
+    public String getUserPrefix(String username){
+        return USER_PACKAGE_PREFIX + username + "/";
+    }
+
+    public String getUserPrefixWithoutSlash(String username){
+        return USER_PACKAGE_PREFIX + username;
+    }
+
+    public String getUserDeletedPrefix(String username){
+        return USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
+    }
 
     public String convertBytesToMbOrKb(long sizeInBytes) {
         String formattedSize;

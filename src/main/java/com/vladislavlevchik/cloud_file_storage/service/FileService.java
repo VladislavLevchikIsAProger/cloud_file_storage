@@ -32,19 +32,17 @@ public class FileService {
 
     private final MinioOperationUtil minio;
 
-    @Value("${minio.user.memory}")
-    private final int userMemory;
-
     private final FolderService folderService;
 
     private final StringUtil stringUtil;
 
-    private final static String USER_PACKAGE_PREFIX = "user-";
-    private final static String DELETED_FOLDER = "/deleted/";
+    @Value("${minio.user.memory}")
+    private final int userMemory;
 
     @SneakyThrows
     public MemoryResponseDto getMemoryInfo(String username) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
+        String folderPrefix = stringUtil.getUserPrefix(username);
+
         long totalSize = 0;
 
         for (Result<Item> result : minio.listObjects(folderPrefix)) {
@@ -66,8 +64,8 @@ public class FileService {
 
         for (MultipartFile file : files) {
             String fileKey = (path.isEmpty())
-                    ? USER_PACKAGE_PREFIX + username + "/" + file.getOriginalFilename()
-                    : USER_PACKAGE_PREFIX + username + "/" + path + "/" + file.getOriginalFilename();
+                    ? stringUtil.getUserPrefix(username) + file.getOriginalFilename()
+                    : stringUtil.getUserPrefix(username) + path + "/" + file.getOriginalFilename();
 
             minio.put(fileKey, file.getInputStream(), file.getSize(), file.getContentType());
         }
@@ -77,7 +75,7 @@ public class FileService {
     public List<FileResponseDto> searchFile(String username, String fileName) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
+        String folderPrefix = stringUtil.getUserPrefix(username);;
 
         String lowerCaseFileName = fileName.toLowerCase();
 
@@ -92,23 +90,8 @@ public class FileService {
 
             String lowerCaseObjectName = stringUtil.getFileName(objectName).toLowerCase();
 
-            if (lowerCaseObjectName.contains(lowerCaseFileName) && !objectName.startsWith(USER_PACKAGE_PREFIX + username + DELETED_FOLDER)) {
-                String formattedSize = stringUtil.convertBytesToMbOrKb(item.size());
-
-                String mainSubdirectory = stringUtil.getMainSubdirectory(objectName);
-
-                String folderColor = folderService.getFolderColor(mainSubdirectory, username);
-
-                fileList.add(
-                        FileResponseDto.builder()
-                                .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                                .filePath(stringUtil.getSubdirectories(objectName))
-                                .size(formattedSize)
-                                .lastModified(createTimeResponseDto(item.lastModified()))
-                                .customFolderName(mainSubdirectory)
-                                .color(folderColor)
-                                .build()
-                );
+            if (lowerCaseObjectName.contains(lowerCaseFileName) && !objectName.startsWith(stringUtil.getUserDeletedPrefix(username))) {
+                fileList.add(buildFileResponseDto(item, username, true));
             }
         }
 
@@ -119,7 +102,7 @@ public class FileService {
     public List<FileResponseDto> searchFileInDeleted(String username, String fileName) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
+        String folderPrefix = stringUtil.getUserDeletedPrefix(username);
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
@@ -137,16 +120,7 @@ public class FileService {
             String lowerCaseObjectName = stringUtil.getFileName(objectName).toLowerCase();
 
             if (lowerCaseObjectName.contains(lowerCaseFileName)) {
-                String formattedSize = stringUtil.convertBytesToMbOrKb(item.size());
-
-                fileList.add(
-                        FileResponseDto.builder()
-                                .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                                .filePath(stringUtil.getSubdirectories(objectName))
-                                .size(formattedSize)
-                                .lastModified(createTimeResponseDto(item.lastModified()))
-                                .build()
-                );
+                fileList.add(buildFileResponseDto(item, username, false));
             }
         }
 
@@ -157,7 +131,7 @@ public class FileService {
     public List<FileResponseDto> listFilesInAllFiles(String username) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/";
+        String folderPrefix = stringUtil.getUserPrefix(username);
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
@@ -169,54 +143,27 @@ public class FileService {
             if (objectName.endsWith(".empty")) {
                 continue;
             }
-
-            String formattedSize = stringUtil.convertBytesToMbOrKb(item.size());
-
-            if (!objectName.startsWith(USER_PACKAGE_PREFIX + username + DELETED_FOLDER)) {
-                String mainSubdirectory = stringUtil.getMainSubdirectory(objectName);
-
-                String folderColor = folderService.getFolderColor(mainSubdirectory, username);
-
-                fileList.add(
-                        FileResponseDto.builder()
-                                .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                                .filePath(stringUtil.getSubdirectories(objectName))
-                                .size(formattedSize)
-                                .lastModified(createTimeResponseDto(item.lastModified()))
-                                .customFolderName(mainSubdirectory)
-                                .color(folderColor)
-                                .build()
-                );
+            if (!objectName.startsWith(stringUtil.getUserDeletedPrefix(username))) {
+                fileList.add(buildFileResponseDto(item, username, true));
             }
-
         }
 
         return fileList;
     }
 
+
     @SneakyThrows
     public List<FileResponseDto> listFilesInDeleted(String username) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
+        String folderPrefix = stringUtil.getUserDeletedPrefix(username);
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
         for (Result<Item> itemResult : objects) {
             Item item = itemResult.get();
 
-            String objectName = item.objectName();
-
-            String formattedSize = stringUtil.convertBytesToMbOrKb(item.size());
-
-            fileList.add(
-                    FileResponseDto.builder()
-                            .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
-                            .filePath(stringUtil.getSubdirectories(objectName))
-                            .size(formattedSize)
-                            .lastModified(createTimeResponseDto(item.lastModified()))
-                            .build()
-            );
+            fileList.add(buildFileResponseDto(item, username, false));
         }
 
         return fileList;
@@ -228,9 +175,8 @@ public class FileService {
         Map<String, ZonedDateTime> folderLastModified = new HashMap<>();
 
         List<FileResponseDto> files = new ArrayList<>();
-        List<SubFolderSizeResponseDto> folders = new ArrayList<>();
 
-        String folderPrefix = USER_PACKAGE_PREFIX + username + "/" + folderPath + "/";
+        String folderPrefix = stringUtil.getUserPrefix(username) + folderPath + "/";
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
@@ -251,8 +197,6 @@ public class FileService {
                 continue;
             }
 
-            String formattedSize = stringUtil.convertBytesToMbOrKb(item.size());
-
             if (relativePath.contains("/")) {
                 int index = relativePath.indexOf('/');
                 String subPath = relativePath.substring(0, index);
@@ -263,35 +207,19 @@ public class FileService {
 
                 folderLastModified.put(subPath, currentLastModified.isAfter(item.lastModified()) ? currentLastModified : item.lastModified());
             } else {
-                files.add(FileResponseDto.builder()
-                        .filename(relativePath)
-                        .filePath(folderPath)
-                        .size(formattedSize)
-                        .lastModified(createTimeResponseDto(item.lastModified()))
-                        .build());
+                files.add(buildFileResponseDto(item, username, false));
             }
         }
 
-        for (Map.Entry<String, Long> entry : folderSizes.entrySet()) {
-            String folderName = entry.getKey();
-            String folderSize = stringUtil.convertBytesToMbOrKb(entry.getValue());
-            ZonedDateTime lastModified = folderLastModified.get(folderName);
-            folders.add(SubFolderSizeResponseDto.builder()
-                    .name(folderName)
-                    .size(folderSize)
-                    .lastModified(createTimeResponseDto(lastModified))
-                    .build());
-        }
-
         return FileAndFolderResponseDto.builder()
-                .folders(folders)
+                .folders(buildListSubFolderResponseDto(folderSizes, folderLastModified))
                 .files(files)
                 .build();
     }
 
     @SneakyThrows
     public void deleteFiles(String username, List<FileDeleteRequestDto> files) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
+        String folderPrefix = stringUtil.getUserDeletedPrefix(username);
 
         List<String> paths = new ArrayList<>();
 
@@ -317,10 +245,10 @@ public class FileService {
     @SneakyThrows
     public void moveFiles(String username, FileMoveRequestDto files) {
         String sourcePath = (files.getSource().isEmpty())
-                ? USER_PACKAGE_PREFIX + username
-                : USER_PACKAGE_PREFIX + username + "/" + files.getSource();
+                ? stringUtil.getUserPrefixWithoutSlash(username)
+                : stringUtil.getUserPrefix(username) + files.getSource();
 
-        String targetPath = USER_PACKAGE_PREFIX + username + "/" + files.getTarget() + "/";
+        String targetPath = stringUtil.getUserPrefix(username) + files.getTarget() + "/";
 
         List<String> pathsFiles = files.getFiles().stream()
                 .map(file -> sourcePath + "/" + file.getFilename())
@@ -346,12 +274,12 @@ public class FileService {
     public void moveFilesToDeleted(String username, List<FileMoveToDeletedRequestDto> files) {
         for (FileMoveToDeletedRequestDto file : files) {
             String sourcePath = (file.getFilePath().isEmpty())
-                    ? USER_PACKAGE_PREFIX + username + "/"
-                    : USER_PACKAGE_PREFIX + username + "/" + file.getFilePath() + "/";
+                    ? stringUtil.getUserPrefix(username)
+                    : stringUtil.getUserPrefix(username) + file.getFilePath() + "/";
 
             String pathOldFile = sourcePath + file.getFilename();
 
-            String pathNewFile = USER_PACKAGE_PREFIX + username + "/" + file.getNewFilePath() + "/"
+            String pathNewFile = stringUtil.getUserPrefix(username) + file.getNewFilePath() + "/"
                     + (file.getFilePath().isEmpty() ? file.getFilename() : file.getFilePath() + "/" + file.getFilename());
 
 
@@ -364,8 +292,8 @@ public class FileService {
     @SneakyThrows
     public void renameFile(String username, String filename, FileRenameRequestDto fileRenameRequestDto) {
         String sourcePath = (fileRenameRequestDto.getFilepath().isEmpty())
-                ? USER_PACKAGE_PREFIX + username
-                : USER_PACKAGE_PREFIX + username + "/" + fileRenameRequestDto.getFilepath();
+                ? stringUtil.getUserPrefixWithoutSlash(username)
+                : stringUtil.getUserPrefix(username) + fileRenameRequestDto.getFilepath();
 
         String pathOldFile = sourcePath + "/" + filename;
         String pathNewFile = sourcePath + "/" + fileRenameRequestDto.getNewFileName();
@@ -383,26 +311,13 @@ public class FileService {
             }
 
         }
-
     }
 
     @SneakyThrows
     public void recoverFiles(String username, List<FileRecoverRequestDto> files) {
-        String folderPrefix = USER_PACKAGE_PREFIX + username + DELETED_FOLDER;
+        String folderPrefix = stringUtil.getUserDeletedPrefix(username);
 
-        Map<String, String> pathsMap = new HashMap<>();
-
-        for (FileRecoverRequestDto file : files) {
-            String sourcePath = (file.getFilePath().isEmpty())
-                    ? folderPrefix + file.getFilename()
-                    : folderPrefix + file.getFilePath() + "/" + file.getFilename();
-
-            String destinationPath = (file.getFilePath().isEmpty())
-                    ? USER_PACKAGE_PREFIX + username + "/" + file.getFilename()
-                    : USER_PACKAGE_PREFIX + username + "/" + file.getFilePath() + "/" + file.getFilename();
-
-            pathsMap.put(sourcePath, destinationPath);
-        }
+        Map<String, String> pathsMap = buildFilePathsMapForRecovery(username, folderPrefix, files);
 
         Iterable<Result<Item>> objects = minio.listObjects(folderPrefix);
 
@@ -418,6 +333,58 @@ public class FileService {
                 minio.remove(fileName);
             }
         }
+    }
+
+    private List<SubFolderSizeResponseDto> buildListSubFolderResponseDto(Map<String, Long> folderSizes, Map<String, ZonedDateTime> folderLastModified){
+        List<SubFolderSizeResponseDto> folders = new ArrayList<>();
+
+        for (Map.Entry<String, Long> entry : folderSizes.entrySet()) {
+            String folderName = entry.getKey();
+            String folderSize = stringUtil.convertBytesToMbOrKb(entry.getValue());
+            ZonedDateTime lastModified = folderLastModified.get(folderName);
+            folders.add(SubFolderSizeResponseDto.builder()
+                    .name(folderName)
+                    .size(folderSize)
+                    .lastModified(createTimeResponseDto(lastModified))
+                    .build());
+        }
+
+        return folders;
+    }
+
+    private Map<String, String> buildFilePathsMapForRecovery(String username, String folderPrefix, List<FileRecoverRequestDto> files) {
+        Map<String, String> pathsMap = new HashMap<>();
+
+        for (FileRecoverRequestDto file : files) {
+            String sourcePath = (file.getFilePath().isEmpty())
+                    ? folderPrefix + file.getFilename()
+                    : folderPrefix + file.getFilePath() + "/" + file.getFilename();
+
+            String destinationPath = (file.getFilePath().isEmpty())
+                    ? stringUtil.getUserPrefix(username) + file.getFilename()
+                    : stringUtil.getUserPrefix(username) + file.getFilePath() + "/" + file.getFilename();
+
+            pathsMap.put(sourcePath, destinationPath);
+        }
+        return pathsMap;
+    }
+
+    private FileResponseDto buildFileResponseDto(Item item, String username, boolean inAllFiles) {
+        String objectName = item.objectName();
+
+        FileResponseDto.FileResponseDtoBuilder builder = FileResponseDto.builder()
+                .filename(objectName.substring(objectName.lastIndexOf('/') + 1))
+                .filePath(stringUtil.getSubdirectories(objectName))
+                .size(stringUtil.convertBytesToMbOrKb(item.size()))
+                .lastModified(createTimeResponseDto(item.lastModified()));
+
+        if (inAllFiles) {
+            String mainSubdirectory = stringUtil.getMainSubdirectory(objectName);
+            builder.customFolderName(mainSubdirectory)
+                    .color(folderService.getFolderColor(mainSubdirectory, username));
+        }
+
+        return builder.build();
     }
 
     private TimeResponseDto createTimeResponseDto(ZonedDateTime time) {

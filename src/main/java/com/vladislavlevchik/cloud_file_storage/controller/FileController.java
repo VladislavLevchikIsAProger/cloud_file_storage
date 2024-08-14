@@ -21,8 +21,6 @@ public class FileController {
 
     private final FileService service;
 
-    //TODO сделано для множества файлов
-    //TODO Валидация не сделана
     @PostMapping("/files/upload")
     public ResponseEntity<?> uploadFile(@RequestPart("files") List<MultipartFile> files,
                                         @RequestPart(value = "folderPath", required = false) String path) {
