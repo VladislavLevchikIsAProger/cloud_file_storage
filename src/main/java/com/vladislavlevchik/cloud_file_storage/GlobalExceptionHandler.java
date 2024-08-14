@@ -1,6 +1,8 @@
 package com.vladislavlevchik.cloud_file_storage;
 
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
+import com.vladislavlevchik.cloud_file_storage.exception.FilePathException;
+import com.vladislavlevchik.cloud_file_storage.exception.UploadFileException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -48,5 +50,19 @@ public class GlobalExceptionHandler {
     @ResponseBody
     public MessageResponseDto handleDataIntegrityViolationException() {
         return MessageResponseDto.builder().message("User already exist").build();
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(UploadFileException.class)
+    @ResponseBody
+    public MessageResponseDto handleUploadFileException(UploadFileException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(FilePathException.class)
+    @ResponseBody
+    public MessageResponseDto handleFilePathException(FilePathException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
     }
 }

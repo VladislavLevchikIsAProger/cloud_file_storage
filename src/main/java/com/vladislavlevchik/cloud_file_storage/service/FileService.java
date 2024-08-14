@@ -5,6 +5,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.response.*;
 import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.subfolder.SubFolderSizeResponseDto;
+import com.vladislavlevchik.cloud_file_storage.exception.UploadFileException;
 import com.vladislavlevchik.cloud_file_storage.util.StringUtil;
 import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
 import io.minio.Result;
@@ -58,14 +59,33 @@ public class FileService {
 
     @SneakyThrows
     public void uploadFile(String username, String path, List<MultipartFile> files) {
-        if (path == null || path.trim().isEmpty()) {
+        long userMemoryInBytes = (long) userMemory * 1024 * 1024;
+        long totalSizeInBytes = 0;
+        long totalSizeUserInBytes = 0;
+
+        for (MultipartFile file : files) {
+            totalSizeInBytes += file.getSize();
+        }
+
+        String folderPrefix = stringUtil.getUserPrefix(username);
+
+        for (Result<Item> result : minio.listObjects(folderPrefix)) {
+            Item item = result.get();
+            totalSizeUserInBytes += item.size();
+        }
+
+        if (totalSizeInBytes + totalSizeUserInBytes > userMemoryInBytes) {
+            throw new UploadFileException("Total file size exceeds the available memory.");
+        }
+
+        if (path == null || path.isEmpty()) {
             path = "";
         }
 
         for (MultipartFile file : files) {
             String fileKey = (path.isEmpty())
-                    ? stringUtil.getUserPrefix(username) + file.getOriginalFilename()
-                    : stringUtil.getUserPrefix(username) + path + "/" + file.getOriginalFilename();
+                    ? folderPrefix + file.getOriginalFilename()
+                    : folderPrefix + path + "/" + file.getOriginalFilename();
 
             minio.put(fileKey, file.getInputStream(), file.getSize(), file.getContentType());
         }

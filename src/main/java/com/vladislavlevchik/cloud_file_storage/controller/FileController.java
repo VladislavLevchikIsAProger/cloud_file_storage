@@ -5,10 +5,14 @@ import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileAndFolderRe
 import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.FileService;
+import com.vladislavlevchik.cloud_file_storage.util.ValidationUtil;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,10 +24,15 @@ import java.util.List;
 public class FileController {
 
     private final FileService service;
+    private final ValidationUtil validation;
 
+    //TODO ВАЛИДАЦИЯ СДЕЛАНА
     @PostMapping("/files/upload")
-    public ResponseEntity<?> uploadFile(@RequestPart("files") List<MultipartFile> files,
+    public ResponseEntity<?> uploadFile(@RequestPart(value = "files", required = false) List<MultipartFile> files,
                                         @RequestPart(value = "folderPath", required = false) String path) {
+        validation.validateFiles(files);
+        validation.validateUploadPath(path);
+
         String username = getUserNameFromPrincipal();
 
         service.uploadFile(username, path, files);
@@ -53,8 +62,11 @@ public class FileController {
         return ResponseEntity.ok(service.listFilesInDeleted(username));
     }
 
+    //TODO ВАЛИДАЦИЯ СДЕЛАНА
     @GetMapping("/files")
-    public ResponseEntity<?> listFilesAndDirectories(@RequestParam String path) {
+    public ResponseEntity<?> listFilesAndDirectories(@RequestParam(value = "path", required = false) String path) {
+        validation.validatePath(path);
+
         String username = getUserNameFromPrincipal();
 
         FileAndFolderResponseDto filesAndFolders = service.listFilesAndDirectories(username, path);
@@ -62,7 +74,7 @@ public class FileController {
     }
 
     @DeleteMapping("/files")
-    public ResponseEntity<?> deleteFiles(@RequestBody List<FileDeleteRequestDto> files) {
+    public ResponseEntity<?> deleteFiles(@RequestBody @Valid List<FileDeleteRequestDto> files) {
         String username = getUserNameFromPrincipal();
 
         service.deleteFiles(username, files);
@@ -125,14 +137,14 @@ public class FileController {
     }
 
     @GetMapping("/files/search")
-    public ResponseEntity<?> searchFileInAllFiles(@RequestParam String fileName){
+    public ResponseEntity<?> searchFileInAllFiles(@RequestParam String fileName) {
         String username = getUserNameFromPrincipal();
 
         return ResponseEntity.ok(service.searchFile(username, fileName));
     }
 
     @GetMapping("/files/deleted/search")
-    public ResponseEntity<?> searchFileInDeletedFiles(@RequestParam String fileName){
+    public ResponseEntity<?> searchFileInDeletedFiles(@RequestParam String fileName) {
         String username = getUserNameFromPrincipal();
 
         return ResponseEntity.ok(service.searchFileInDeleted(username, fileName));
