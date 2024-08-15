@@ -52,7 +52,7 @@ public class FileService {
         }
 
         return MemoryResponseDto.builder()
-                .totalSize(valueOf(totalSize / (1024.0 * 1000)).setScale(2, HALF_UP))
+                .totalSize(valueOf(totalSize / (1024.0 * 1024)).setScale(2, HALF_UP))
                 .userMemory(userMemory)
                 .build();
     }

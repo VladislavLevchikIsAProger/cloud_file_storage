@@ -8,6 +8,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderRe
 import com.vladislavlevchik.cloud_file_storage.dto.response.folder.FolderForMoveResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.folder.FolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
+import com.vladislavlevchik.cloud_file_storage.exception.FolderAlreadyExistException;
 import com.vladislavlevchik.cloud_file_storage.exception.FolderNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
 import com.vladislavlevchik.cloud_file_storage.util.StringUtil;
@@ -16,9 +17,12 @@ import io.minio.Result;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.hibernate.exception.ConstraintViolationException;
 import org.modelmapper.ModelMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,16 +42,15 @@ public class FolderService {
 
         folder.setUser(userService.getUser(username));
 
-        customFolderRepository.save(folder);
+        saveFolder(folder);
     }
 
-    @SneakyThrows
     public void updateName(String username, String folderName, FolderRenameRequestDto renameRequestDto) {
         CustomFolder folder = findFolder(username, folderName);
 
         folder.setName(renameRequestDto.getNewName());
 
-        customFolderRepository.save(folder);
+        saveFolder(folder);
 
         updateFolderName(username, folderName, renameRequestDto.getNewName());
     }
@@ -148,7 +151,7 @@ public class FolderService {
 
     private void updateFolderName(String username, String oldFolderName, String newFolderName) {
         String oldFolderPrefix = stringUtil.getUserPrefix(username) + oldFolderName + "/";
-        String newFolderPrefix = stringUtil.getUserPrefix(username)  + "/" + newFolderName + "/";
+        String newFolderPrefix = stringUtil.getUserPrefix(username) + "/" + newFolderName + "/";
 
         moveFolderContents(oldFolderPrefix, newFolderPrefix);
 
@@ -198,5 +201,13 @@ public class FolderService {
                 .size(stringUtil.convertBytesToMbOrKb(totalSize))
                 .filesNumber(String.valueOf(itemCount))
                 .build();
+    }
+
+    private void saveFolder(CustomFolder folder) {
+        try {
+            customFolderRepository.save(folder);
+        } catch (DataIntegrityViolationException ex) {
+            throw new FolderAlreadyExistException("Folder with name=" + folder.getName() + " already exist");
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.vladislavlevchik.cloud_file_storage.util;
 
 import com.vladislavlevchik.cloud_file_storage.exception.FilePathException;
+import com.vladislavlevchik.cloud_file_storage.exception.IncorrectFileNameException;
 import com.vladislavlevchik.cloud_file_storage.exception.UploadFileException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +35,18 @@ public class ValidationUtil {
         }
         if (!isValidPath(path)) {
             throw new FilePathException("The path must match the format img, img/png, files/photo/img");
+        }
+    }
+
+    public void validateFilename(String filename){
+        if(filename == null || filename.trim().isEmpty()){
+            throw new IncorrectFileNameException("Filename must not be empty");
+        }
+    }
+
+    public void validateFolderName(String folderName){
+        if(folderName == null || folderName.trim().isEmpty()){
+            throw new IncorrectFileNameException("Folder name must not be empty");
         }
     }
 
