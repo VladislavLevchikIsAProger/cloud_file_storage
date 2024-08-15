@@ -1,9 +1,7 @@
 package com.vladislavlevchik.cloud_file_storage;
 
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
-import com.vladislavlevchik.cloud_file_storage.exception.FilePathException;
-import com.vladislavlevchik.cloud_file_storage.exception.UploadFileException;
-import org.hibernate.exception.ConstraintViolationException;
+import com.vladislavlevchik.cloud_file_storage.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -46,10 +44,24 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)
-    @ExceptionHandler(ConstraintViolationException.class)
+    @ExceptionHandler(UserAlreadyExistException.class)
     @ResponseBody
-    public MessageResponseDto handleDataIntegrityViolationException() {
-        return MessageResponseDto.builder().message("User already exist").build();
+    public MessageResponseDto handleUserAlreadyExistException(UserAlreadyExistException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(FolderAlreadyExistException.class)
+    @ResponseBody
+    public MessageResponseDto handleFolderAlreadyExistException(FolderAlreadyExistException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(FolderNotFoundException.class)
+    @ResponseBody
+    public MessageResponseDto handleFolderNotFoundException(FolderNotFoundException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -63,6 +75,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FilePathException.class)
     @ResponseBody
     public MessageResponseDto handleFilePathException(FilePathException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IncorrectFileNameException.class)
+    @ResponseBody
+    public MessageResponseDto handleIncorrectFileNameException(IncorrectFileNameException ex) {
         return MessageResponseDto.builder().message(ex.getMessage()).build();
     }
 }
