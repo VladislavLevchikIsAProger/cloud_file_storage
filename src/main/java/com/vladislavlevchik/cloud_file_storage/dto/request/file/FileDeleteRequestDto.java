@@ -2,7 +2,6 @@ package com.vladislavlevchik.cloud_file_storage.dto.request.file;
 
 import com.vladislavlevchik.cloud_file_storage.validation.ValidFilePath;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

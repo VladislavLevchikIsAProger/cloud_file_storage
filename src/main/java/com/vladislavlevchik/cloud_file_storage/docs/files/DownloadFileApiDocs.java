@@ -1,7 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.docs.files;
 
 import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileAndFolderResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;

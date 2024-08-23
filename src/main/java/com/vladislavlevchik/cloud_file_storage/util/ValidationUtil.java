@@ -1,12 +1,10 @@
 package com.vladislavlevchik.cloud_file_storage.util;
 
 import com.vladislavlevchik.cloud_file_storage.dto.request.folder.FolderRenameRequestDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.exception.FilePathException;
 import com.vladislavlevchik.cloud_file_storage.exception.IncorrectFileNameException;
 import com.vladislavlevchik.cloud_file_storage.exception.SameNameException;
 import com.vladislavlevchik.cloud_file_storage.exception.UploadFileException;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 

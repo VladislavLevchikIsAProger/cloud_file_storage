@@ -1,7 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.util;
 
 import io.minio.*;
-import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +27,7 @@ public class MinioOperationUtil {
                 .build());
     }
 
-    public Iterable<Result<Item>> listObjects(String folderPrefix) throws Exception {
+    public Iterable<Result<Item>> listObjects(String folderPrefix) {
         return minioClient.listObjects(
                 ListObjectsArgs.builder()
                         .bucket(bucketName)
