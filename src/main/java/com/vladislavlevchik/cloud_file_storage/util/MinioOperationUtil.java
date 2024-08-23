@@ -1,6 +1,7 @@
 package com.vladislavlevchik.cloud_file_storage.util;
 
 import io.minio.*;
+import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +19,7 @@ public class MinioOperationUtil {
     @Value("${minio.bucket.name}")
     private String bucketName;
 
-    public void put(String fileKey, InputStream stream, long size, String contentType) throws Exception{
+    public void put(String fileKey, InputStream stream, long size, String contentType) throws Exception {
         minioClient.putObject(PutObjectArgs.builder()
                 .bucket(bucketName)
                 .object(fileKey)
@@ -55,7 +56,7 @@ public class MinioOperationUtil {
                 .build());
     }
 
-    public void createEmptyPackage(String folderPath) throws Exception{
+    public void createEmptyPackage(String folderPath) throws Exception {
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucketName)
@@ -65,4 +66,21 @@ public class MinioOperationUtil {
         );
     }
 
+
+    public InputStream getObject(String objectName) throws Exception {
+        return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build());
+
+    }
+
+    public void checkObject(String objectName) throws Exception{
+        minioClient.statObject(
+                StatObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build());
+    }
 }

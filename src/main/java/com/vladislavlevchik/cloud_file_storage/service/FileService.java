@@ -5,6 +5,7 @@ import com.vladislavlevchik.cloud_file_storage.dto.response.*;
 import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.subfolder.SubFolderSizeResponseDto;
+import com.vladislavlevchik.cloud_file_storage.exception.FileNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.exception.UploadFileException;
 import com.vladislavlevchik.cloud_file_storage.util.StringUtil;
 import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
@@ -13,9 +14,12 @@ import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -95,7 +99,8 @@ public class FileService {
     public List<FileResponseDto> searchFile(String username, String fileName) {
         List<FileResponseDto> fileList = new ArrayList<>();
 
-        String folderPrefix = stringUtil.getUserPrefix(username);;
+        String folderPrefix = stringUtil.getUserPrefix(username);
+        ;
 
         String lowerCaseFileName = fileName.toLowerCase();
 
@@ -291,8 +296,8 @@ public class FileService {
     }
 
     @SneakyThrows
-    public void moveFilesToDeleted(String username, List<FileMoveToDeletedRequestDto> files) {
-        for (FileMoveToDeletedRequestDto file : files) {
+    public void moveFilesToDeleted(String username, List<FileMoveToPackageRequestDto> files) {
+        for (FileMoveToPackageRequestDto file : files) {
             String sourcePath = (file.getFilePath().isEmpty())
                     ? stringUtil.getUserPrefix(username)
                     : stringUtil.getUserPrefix(username) + file.getFilePath() + "/";
@@ -301,6 +306,29 @@ public class FileService {
 
             String pathNewFile = stringUtil.getUserPrefix(username) + file.getNewFilePath() + "/"
                     + (file.getFilePath().isEmpty() ? file.getFilename() : file.getFilePath() + "/" + file.getFilename());
+
+
+            minio.copy(pathOldFile, pathNewFile);
+
+            minio.remove(pathOldFile);
+        }
+    }
+
+    @SneakyThrows
+    public void moveFilesToPackage(String username, List<FileMoveToPackageRequestDto> files) {
+        for (FileMoveToPackageRequestDto file : files) {
+            if (file.getFilePath().equals(file.getNewFilePath())){
+                continue;
+            }
+
+            String sourcePath = (file.getFilePath().isEmpty())
+                    ? stringUtil.getUserPrefix(username)
+                    : stringUtil.getUserPrefix(username) + file.getFilePath() + "/";
+
+            String pathOldFile = sourcePath + file.getFilename();
+
+            String pathNewFile = stringUtil.getUserPrefix(username) + file.getNewFilePath() + "/"
+                    + file.getFilename();
 
 
             minio.copy(pathOldFile, pathNewFile);
@@ -355,7 +383,26 @@ public class FileService {
         }
     }
 
-    private List<SubFolderSizeResponseDto> buildListSubFolderResponseDto(Map<String, Long> folderSizes, Map<String, ZonedDateTime> folderLastModified){
+    @SneakyThrows
+    public Resource downloadFile(String username, String fileName) {
+        String objectName = stringUtil.getUserPrefix(username) + fileName;
+
+        fileExists(objectName);
+
+        InputStream inputStream = minio.getObject(objectName);
+
+        return new InputStreamResource(inputStream);
+    }
+
+    private void fileExists(String objectName) {
+        try {
+            minio.checkObject(objectName);
+        } catch (Exception e) {
+            throw new FileNotFoundException("File " + objectName + " not found");
+        }
+    }
+
+    private List<SubFolderSizeResponseDto> buildListSubFolderResponseDto(Map<String, Long> folderSizes, Map<String, ZonedDateTime> folderLastModified) {
         List<SubFolderSizeResponseDto> folders = new ArrayList<>();
 
         for (Map.Entry<String, Long> entry : folderSizes.entrySet()) {

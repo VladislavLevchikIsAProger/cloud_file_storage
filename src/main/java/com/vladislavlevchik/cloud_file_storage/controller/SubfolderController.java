@@ -1,5 +1,8 @@
 package com.vladislavlevchik.cloud_file_storage.controller;
 
+import com.vladislavlevchik.cloud_file_storage.docs.subfolder.CreateSubfolderApiDocs;
+import com.vladislavlevchik.cloud_file_storage.docs.subfolder.DeleteSubfolderApiDocs;
+import com.vladislavlevchik.cloud_file_storage.docs.subfolder.RenameSubfolderApiDocs;
 import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderDeleteRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderRenameRequestDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.subfolder.SubFolderRequestDto;
@@ -9,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,8 +22,9 @@ public class SubfolderController {
 
     private final FolderService service;
 
+    @CreateSubfolderApiDocs
     @PostMapping()
-    public ResponseEntity<?> createSubFolder(@RequestBody SubFolderRequestDto subFolderRequestDto) {
+    public ResponseEntity<?> createSubFolder(@RequestBody @Validated SubFolderRequestDto subFolderRequestDto) {
         String username = getUserNameFromPrincipal();
 
         service.createSubFolder(username, subFolderRequestDto);
@@ -29,10 +34,10 @@ public class SubfolderController {
                 .build());
     }
 
+    @RenameSubfolderApiDocs
     @PatchMapping()
     public ResponseEntity<?> renameSubfolder(
-            @RequestBody SubFolderRenameRequestDto renameRequestDto) {
-
+            @RequestBody @Validated SubFolderRenameRequestDto renameRequestDto) {
         String username = getUserNameFromPrincipal();
 
         service.updateSubfolderName(username, renameRequestDto.getOldName(), renameRequestDto);
@@ -42,9 +47,10 @@ public class SubfolderController {
                 .build());
     }
 
+    @DeleteSubfolderApiDocs
     @DeleteMapping()
     public ResponseEntity<?> deleteSubfolder(
-            @RequestBody SubFolderDeleteRequestDto deleteRequestDto) {
+            @RequestBody @Validated SubFolderDeleteRequestDto deleteRequestDto) {
 
         String username = getUserNameFromPrincipal();
 

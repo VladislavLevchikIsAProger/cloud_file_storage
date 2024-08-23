@@ -1,6 +1,5 @@
 package com.vladislavlevchik.cloud_file_storage.dto.request.file;
 
-import com.vladislavlevchik.cloud_file_storage.validation.ValidFilePath;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
@@ -14,15 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileCopyRequestDto {
+public class ListFilesRecoverRequestDto {
 
-    @ValidFilePath
-    private String source;
-    @ValidFilePath
-    private String target;
-
-    @NotEmpty(message = "The list of files to delete cannot be empty.")
+    @NotEmpty(message = "The list of files to recover cannot be empty.")
     @Valid
-    private List<FileNameRequestDto> files;
+    private List<FileRecoverRequestDto> files;
 
 }

@@ -151,7 +151,7 @@ public class FolderService {
 
     private void updateFolderName(String username, String oldFolderName, String newFolderName) {
         String oldFolderPrefix = stringUtil.getUserPrefix(username) + oldFolderName + "/";
-        String newFolderPrefix = stringUtil.getUserPrefix(username) + "/" + newFolderName + "/";
+        String newFolderPrefix = stringUtil.getUserPrefix(username) + newFolderName + "/";
 
         moveFolderContents(oldFolderPrefix, newFolderPrefix);
 

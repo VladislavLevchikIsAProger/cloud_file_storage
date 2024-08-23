@@ -37,7 +37,10 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/users/register",
-                                "/api/v1/auth/login").permitAll()
+                                "/api/v1/auth/login",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**").permitAll()
+
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(entryPoint)

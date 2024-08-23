@@ -71,6 +71,20 @@ public class GlobalExceptionHandler {
         return MessageResponseDto.builder().message(ex.getMessage()).build();
     }
 
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(FileNotFoundException.class)
+    @ResponseBody
+    public MessageResponseDto handleFileNotFoundException(FileNotFoundException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(SameNameException.class)
+    @ResponseBody
+    public MessageResponseDto handleSameNameException(SameNameException ex) {
+        return MessageResponseDto.builder().message(ex.getMessage()).build();
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(FilePathException.class)
     @ResponseBody

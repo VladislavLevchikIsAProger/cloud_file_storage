@@ -1,5 +1,6 @@
 package com.vladislavlevchik.cloud_file_storage.dto.request.file;
 
+import com.vladislavlevchik.cloud_file_storage.validation.ValidFilePath;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ public class FileDeleteRequestDto {
     @NotBlank(message = "Filename cannot be empty.")
     private String filename;
 
-    @Pattern(regexp = "(|([a-zA-Z0-9]+/)*[a-zA-Z0-9]+)", message = "The path must match the format img, img/png, files/photo/img")
+    @ValidFilePath(message = "The path must match the format img, img/png, files/photo/img")
     private String filePath;
 
 }

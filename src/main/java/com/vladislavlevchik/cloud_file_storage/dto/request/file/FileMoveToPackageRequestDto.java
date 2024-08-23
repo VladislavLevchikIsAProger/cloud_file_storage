@@ -11,11 +11,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileRenameRequestDto {
+public class FileMoveToPackageRequestDto {
 
-    @ValidFilePath(message = "The path must match the format img, img/png, files/photo/img")
-    private String filepath;
     @NotBlank(message = "Filename cannot be empty.")
-    private String newFileName;
+    private String filename;
+    @ValidFilePath(message = "The path must match the format img, img/png, files/photo/img")
+    private String filePath;
+    @ValidFilePath(message = "The path must match the format img, img/png, files/photo/img")
+    private String newFilePath;
 
 }
