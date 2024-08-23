@@ -100,7 +100,7 @@ public class FileService {
         List<FileResponseDto> fileList = new ArrayList<>();
 
         String folderPrefix = stringUtil.getUserPrefix(username);
-        ;
+
 
         String lowerCaseFileName = fileName.toLowerCase();
 

@@ -11,18 +11,16 @@ import com.vladislavlevchik.cloud_file_storage.entity.CustomFolder;
 import com.vladislavlevchik.cloud_file_storage.exception.FolderAlreadyExistException;
 import com.vladislavlevchik.cloud_file_storage.exception.FolderNotFoundException;
 import com.vladislavlevchik.cloud_file_storage.repository.CustomFolderRepository;
-import com.vladislavlevchik.cloud_file_storage.util.StringUtil;
 import com.vladislavlevchik.cloud_file_storage.util.MinioOperationUtil;
+import com.vladislavlevchik.cloud_file_storage.util.StringUtil;
 import io.minio.Result;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.hibernate.exception.ConstraintViolationException;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 

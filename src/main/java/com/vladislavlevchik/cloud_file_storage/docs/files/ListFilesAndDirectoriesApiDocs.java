@@ -23,7 +23,6 @@ import java.lang.annotation.Target;
                 @Parameter(
                         name = "path",
                         description = "Path to the folder in which we want to get the list of subfolders and files.",
-                        required = false,
                         schema = @Schema(type = "string"),
                         examples = {
                                 @ExampleObject(name = "Valid Paths", value = "img"),
