@@ -2,19 +2,12 @@ package com.vladislavlevchik.cloud_file_storage.controller;
 
 import com.vladislavlevchik.cloud_file_storage.docs.files.*;
 import com.vladislavlevchik.cloud_file_storage.dto.request.file.*;
+import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileAndFolderResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.response.file.FileResponseDto;
-import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.FileService;
 import com.vladislavlevchik.cloud_file_storage.util.ValidationUtil;
 import io.swagger.v3.oas.annotations.Hidden;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.headers.Header;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -28,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "Files")
 @RestController

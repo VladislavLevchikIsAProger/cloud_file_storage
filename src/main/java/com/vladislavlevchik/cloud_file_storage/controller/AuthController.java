@@ -2,8 +2,8 @@ package com.vladislavlevchik.cloud_file_storage.controller;
 
 import com.vladislavlevchik.cloud_file_storage.docs.auth.GetStatusApiDocs;
 import com.vladislavlevchik.cloud_file_storage.docs.auth.LoginApiDocs;
-import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.dto.request.user.UserLoginRequestDto;
+import com.vladislavlevchik.cloud_file_storage.dto.response.MessageResponseDto;
 import com.vladislavlevchik.cloud_file_storage.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
