@@ -52,3 +52,8 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.named('jar') {
+    archiveBaseName.set('your-app')
+    archiveVersion.set('0.0.1-SNAPSHOT')
+}

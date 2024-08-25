@@ -9,14 +9,17 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "folders")
+@Table(
+        name = "folders",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "user_id"})}
+)
 public class CustomFolder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)

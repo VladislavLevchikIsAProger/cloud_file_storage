@@ -288,6 +288,10 @@ public class FileService {
             if (pathsFiles.contains(fileName)) {
                 String targetFilePath = targetPath + stringUtil.getFileName(fileName);
 
+                if(targetFilePath.equals(fileName)){
+                    continue;
+                }
+
                 minio.copy(fileName, targetFilePath);
 
                 minio.remove(fileName);

@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: vlad
+    password: vlad
+  jpa:
+    show-sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+
+minio:
+  url: http://localhost:9000
+  credentials:
+    user: cloudfilestorage
+    password: cloudfilestorage
+  bucket:
+    name: disk
+  user:
+    memory: 500
