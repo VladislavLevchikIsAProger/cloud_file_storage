@@ -1,0 +1,2588 @@
+openapi: 3.0.1
+info:
+  title: Cloudify API
+  description: API for cloud file storage
+  version: '1.0'
+servers:
+  - url: http://localhost:8080
+    description: Generated server url
+paths:
+  /api/v1/users/register:
+    post:
+      tags:
+        - Registration
+      summary: Register a new user
+      description: Save the user to the users database
+      operationId: register
+      requestBody:
+        description: User registration request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequestDto'
+            examples:
+              Valid Request:
+                description: Valid Request
+                value:
+                  username: validUser
+                  password: validPassword
+              Missing Password:
+                description: Missing Password
+                value:
+                  username: validUser
+              Missing Username:
+                description: Missing Username
+                value:
+                  password: validPassword
+              Empty Username:
+                description: Empty Username
+                value:
+                  username: ''
+                  password: validPassword
+              Empty Password:
+                description: Empty Password
+                value:
+                  username: validUser
+                  password: ''
+              Too short Username:
+                description: Too short Username
+                value:
+                  username: v
+                  password: validPassword
+              Too short Password:
+                description: Too short Password
+                value:
+                  username: validUser
+                  password: va
+              Too long Username:
+                description: Too long Username
+                value:
+                  username: validUservalidUservalidUser
+                  password: validPassword
+              Too long Password:
+                description: Too long Password
+                value:
+                  username: validUser
+                  password: validPasswordvalidPasswordvalidPassword
+              Invalid Pattern Username:
+                description: Invalid Pattern Username
+                value:
+                  username: validUser.
+                  password: validPassword
+              Invalid Pattern Password:
+                description: Invalid Pattern Password
+                value:
+                  username: validUser
+                  password: validPassword.
+        required: true
+      responses:
+        '200':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: User validUser successfully registered!
+        '400':
+          description: Bad Request (e.g., invalid request data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Missing Username:
+                  description: Missing Username
+                  value:
+                    username: Username is mandatory
+                Missing Password:
+                  description: Missing Password
+                  value:
+                    password: Password is mandatory
+                Empty Username:
+                  description: Empty Username
+                  value:
+                    username: Username cannot be empty
+                Empty Password:
+                  description: Empty Password
+                  value:
+                    password: Password cannot be empty
+                Too short Username:
+                  description: Too short Username
+                  value:
+                    username: Username must be between 2 and 20 characters
+                Too short Password:
+                  description: Too short Password
+                  value:
+                    password: Username must be between 2 and 20 characters
+                Too long Username:
+                  description: Too long Username
+                  value:
+                    username: Username cannot be more than 20 characters long
+                Too long Password:
+                  description: Too long Password
+                  value:
+                    password: Password must be between 3 and 20 characters
+                Invalid Pattern Username:
+                  description: Invalid Pattern Username
+                  value:
+                    username: Username can only contain letters and numbers
+                Invalid Pattern Password:
+                  description: Invalid Pattern Password
+                  value:
+                    password: Password can only contain letters and numbers
+        '401':
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict (e.g., user already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: User already exists
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/subfolders:
+    post:
+      tags:
+        - subfolder-controller
+      summary: Create a subfolder
+      description: Creates a new subfolder in the specified folder path for an authenticated user.
+      operationId: createSubFolder
+      requestBody:
+        description: Subfolder creation request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubFolderRequestDto'
+            examples:
+              Valid Request 1:
+                description: Valid Request 1
+                value:
+                  folderPath: Me
+                  name: '2023'
+              Valid Request 2:
+                description: Valid Request 2
+                value:
+                  folderPath: Me/2023
+                  name: pic
+              Invalid Request - Invalid Path:
+                description: Invalid Request - Invalid Path
+                value:
+                  folderPath: Me/
+                  name: '2023'
+              Invalid Request - Missing Path:
+                description: Invalid Request - Missing Path
+                value:
+                  name: '2023'
+              Invalid Request - Missing Name:
+                description: Invalid Request - Missing Name
+                value:
+                  folderPath: Me
+        required: true
+      responses:
+        '200':
+          description: Subfolder successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Subfolder successfully created
+        '400':
+          description: Bad Request (e.g., invalid folder path or missing subfolder name)
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Invalid Path Response:
+                  description: Invalid Path Response
+                  value:
+                    folderPath: The path must match the format img/png, files/photo/img
+                Missing Name Response:
+                  description: Missing Name Response
+                  value:
+                    name: Subfolder name cannot be empty.
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+    delete:
+      tags:
+        - subfolder-controller
+      summary: Delete a subfolder
+      description: Deletes an existing subfolder in the specified folder path for an authenticated user. Also all files in deleted from this subfolder are automatically moved to the root
+      operationId: deleteSubfolder
+      requestBody:
+        description: Subfolder deletion request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubFolderDeleteRequestDto'
+            examples:
+              Valid Request:
+                description: Valid Request
+                value:
+                  folderPath: img/exe1
+              Invalid Request - Invalid Path:
+                description: Invalid Request - Invalid Path
+                value:
+                  folderPath: img/exe/
+              Invalid Request - Missing Path:
+                description: Invalid Request - Missing Path
+                value: {}
+        required: true
+      responses:
+        '200':
+          description: Subfolder successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Subfolder successful deleted
+        '400':
+          description: Bad Request (e.g., invalid folder path or missing subfolder path)
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Invalid Path Response:
+                  description: Invalid Path Response
+                  value:
+                    folderPath: The path must match the format img/png, files/photo/img
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+    patch:
+      tags:
+        - subfolder-controller
+      summary: Rename a subfolder
+      description: Renames an existing subfolder in the specified folder path for an authenticated user. Also changes all files that are in the 'deleted' folder from the changed subfolder will automatically change to the new path.
+      operationId: renameSubfolder
+      requestBody:
+        description: Subfolder rename request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubFolderRenameRequestDto'
+            examples:
+              Valid Request:
+                description: Valid Request
+                value:
+                  oldName: img/exe
+                  newName: img/exe1
+              Invalid Request - Missing newName:
+                description: Invalid Request - Missing newName
+                value:
+                  oldName: img/exe
+              Invalid Request - Missing oldName:
+                description: Invalid Request - Missing oldName
+                value:
+                  newName: img/exe1
+              Invalid Request - Invalid oldName:
+                description: Invalid Request - Invalid oldName
+                value:
+                  oldName: img/exe12/
+                  newName: img/exe1
+              Invalid Request - Invalid newName:
+                description: Invalid Request - Invalid newName
+                value:
+                  oldName: img/exe
+                  newName: /img/exe1/
+              Invalid Request - Both invalid paths:
+                description: Invalid Request - Both invalid paths
+                value:
+                  newName: The path must match the format img/png, files/photo/img
+                  oldName: The path must match the format img/png, files/photo/img
+        required: true
+      responses:
+        '200':
+          description: Subfolder successfully renamed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Subfolder successful renamed
+        '400':
+          description: Bad Request (e.g., invalid folder path or missing subfolder names)
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Invalid Path Response:
+                  description: Invalid Path Response
+                  value:
+                    folderPath: The path must match the format img/png, files/photo/img
+                Missing Name Response:
+                  description: Missing Name Response
+                  value:
+                    name: Subfolder name cannot be empty.
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/folders/create:
+    post:
+      tags:
+        - Folders
+      summary: Create a new folder
+      description: Creates a new folder in minio and saves the metadata to the database
+      operationId: createFolder
+      requestBody:
+        description: Folder creation request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FolderRequestDto'
+            examples:
+              Valid Request:
+                description: Valid Request
+                value:
+                  name: Me
+                  color: '#D23434'
+              Missing Name:
+                description: Missing Name
+                value:
+                  color: '#D23434'
+              Missing Color:
+                description: Missing Color
+                value:
+                  name: Me
+              Empty Name:
+                description: Empty Name
+                value:
+                  name: ''
+                  color: '#D23434'
+              Invalid Color Format:
+                description: Invalid Color Format
+                value:
+                  name: Me
+                  color: '#D234341'
+        required: true
+      responses:
+        '200':
+          description: Folder successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder successfully created
+        '400':
+          description: Bad Request (e.g., invalid request data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Missing Name:
+                  description: Missing Name
+                  value:
+                    name: Filename cannot be empty.
+                Missing Color:
+                  description: Missing Color
+                  value:
+                    color: File color cannot be empty.
+                Empty Name:
+                  description: Empty Name
+                  value:
+                    name: Filename cannot be empty.
+                Invalid Color Format:
+                  description: Invalid Color Format
+                  value:
+                    color: 'Color must be a valid HEX code (e.g. #ffffff or #fff).'
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict (e.g., folder already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder with name=Me already exist
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/recover:
+    post:
+      tags:
+        - Files
+      summary: Recover deleted files
+      description: Allows you to restore previously deleted files to the folders from which they were deleted by providing a list of file names and paths.
+      operationId: recoversFiles
+      requestBody:
+        description: List of files to be recovered.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListFilesRecoverRequestDto'
+            examples:
+              Valid request:
+                description: Valid request
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: ''
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                    - filename: VSCodeUserSetup-x64-1.88.0.exe
+                      filePath: img
+              Invalid request - Incorrect filePath:
+                description: Invalid request - Incorrect filePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: /
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                    - filename: VSCodeUserSetup-x64-1.88.0.exe
+                      filePath: img
+              Invalid request - Missing filePath:
+                description: Invalid request - Missing filePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                    - filename: VSCodeUserSetup-x64-1.88.0.exe
+                      filePath: img
+              Invalid request - Missing filename:
+                description: Invalid request - Missing filename
+                value:
+                  files:
+                    - filePath: ''
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                    - filename: VSCodeUserSetup-x64-1.88.0.exe
+                      filePath: img
+              Invalid request - Empty files array:
+                description: Invalid request - Empty files array
+                value:
+                  files: []
+              Invalid request - Missing files field:
+                description: Invalid request - Missing files field
+                value: {}
+        required: true
+      responses:
+        '200':
+          description: Files successfully recovered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Files successfully recovered
+        '400':
+          description: Bad Request (e.g., invalid input data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Invalid request - Incorrect filePath:
+                  description: Invalid request - Incorrect filePath
+                  value:
+                    files[0].filePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filePath:
+                  description: Invalid request - Missing filePath
+                  value:
+                    files[0].filePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filename:
+                  description: Invalid request - Missing filename
+                  value:
+                    files[0].filename: Filename cannot be empty.
+                Invalid request - Empty files array:
+                  description: Invalid request - Empty files array
+                  value:
+                    files: The list of files to recover cannot be empty.
+                Invalid request - Missing files field:
+                  description: Invalid request - Missing files field
+                  value:
+                    files: The list of files to recover cannot be empty.
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/move:
+    post:
+      tags:
+        - Files
+      summary: Move files in source to target
+      description: Moves specified files from the source path to the target path.
+      operationId: moveFiles
+      requestBody:
+        description: Details of files to be moved, including source and target paths.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileMoveRequestDto'
+            examples:
+              Valid request:
+                description: Valid request
+                value:
+                  source: img
+                  target: img/backup
+                  files:
+                    - filename: photo.jpg
+                    - filename: document.pdf
+              Invalid request - Missing source path:
+                description: Invalid request - Missing source path
+                value:
+                  target: img/backup
+                  files:
+                    - filename: photo.jpg
+              Invalid request - Missing target path:
+                description: Invalid request - Missing target path
+                value:
+                  source: img
+                  files:
+                    - filename: photo.jpg
+              Invalid request - Missing files:
+                description: Invalid request - Missing files
+                value:
+                  source: img
+                  target: img/backup
+              Invalid request - Empty body:
+                description: Invalid request - Empty body
+                value: {}
+        required: true
+      responses:
+        '200':
+          description: Files successfully migrated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Files successfully migrated
+        '400':
+          description: Bad Request (e.g., invalid input data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Invalid request - Files list empty:
+                  description: Invalid request - Files list empty
+                  value:
+                    files: The list of files to delete cannot be empty.
+                Invalid request - Files list not provided:
+                  description: Invalid request - Files list not provided
+                  value:
+                    files: The list of files to delete cannot be empty.
+                Invalid request - Filename missing:
+                  description: Invalid request - Filename missing
+                  value:
+                    files[0].filename: Filename cannot be empty.
+                Invalid request - Target path missing:
+                  description: Invalid request - Target path missing
+                  value:
+                    target: The path must match the format img, img/png, files/photo/img
+                Invalid request - Source path missing:
+                  description: Invalid request - Source path missing
+                  value:
+                    source: The path must match the format img, img/png, files/photo/img
+                Invalid request - Incorrect source path:
+                  description: Invalid request - Incorrect source path
+                  value:
+                    source: The path must match the format img, img/png, files/photo/img
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/move/deleted:
+    post:
+      tags:
+        - Files
+      summary: Move files to deleted
+      description: Moves specified files to the 'deleted' directory. The path will be the same as before, but with the prefix deleted for future recovery
+      operationId: moveFilesToDeleted
+      requestBody:
+        description: List of files to be moved to the deleted directory.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListFilesMoveToPackageRequestDto'
+            examples:
+              Valid request:
+                description: Valid request
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: ''
+                      newFilePath: deleted
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: deleted
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: deleted
+              Invalid request - Incorrect filePath:
+                description: Invalid request - Incorrect filePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: /
+                      newFilePath: deleted
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: deleted
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: deleted
+              Invalid request - Missing filePath:
+                description: Invalid request - Missing filePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      newFilePath: deleted
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: deleted
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: deleted
+              Invalid request - Missing newFilePath:
+                description: Invalid request - Missing newFilePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: ''
+                      newFilePath: deleted
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: deleted
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: deleted
+              Invalid request - Missing filename:
+                description: Invalid request - Missing filename
+                value:
+                  files:
+                    - filePath: ''
+                      newFilePath: deleted
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: deleted
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: deleted
+              Invalid request - Empty files array:
+                description: Invalid request - Empty files array
+                value:
+                  files: []
+              Invalid request - Missing files field:
+                description: Invalid request - Missing files field
+                value: {}
+        required: true
+      responses:
+        '200':
+          description: Files successfully moved to deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Files successfully moved to deleted
+        '400':
+          description: Bad Request (e.g., invalid input data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Invalid request - Incorrect filePath:
+                  description: Invalid request - Incorrect filePath
+                  value:
+                    files[0].filePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filePath:
+                  description: Invalid request - Missing filePath
+                  value:
+                    files[0].filePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing newFilePath:
+                  description: Invalid request - Missing newFilePath
+                  value:
+                    files[0].newFilePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filename:
+                  description: Invalid request - Missing filename
+                  value:
+                    files[0].filename: Filename cannot be empty.
+                Invalid request - Empty files array:
+                  description: Invalid request - Empty files array
+                  value:
+                    files: The list of files to delete cannot be empty.
+                Invalid request - Missing files field:
+                  description: Invalid request - Missing files field
+                  value:
+                    files: The list of files to delete cannot be empty.
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/all/move:
+    post:
+      tags:
+        - Files
+      summary: Move files to folder
+      description: Moves the specified files to the selected folder
+      operationId: moveFilesToPackage
+      requestBody:
+        description: List of files to be moved to the folder
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListFilesMoveToPackageRequestDto'
+            examples:
+              Valid request:
+                description: Valid request
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: ''
+                      newFilePath: Me
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: Me
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: Me
+              Invalid request - Incorrect filePath:
+                description: Invalid request - Incorrect filePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: /
+                      newFilePath: Me
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: Me
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: Me
+              Invalid request - Missing filePath:
+                description: Invalid request - Missing filePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      newFilePath: Me
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: Me
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: Me
+              Invalid request - Missing newFilePath:
+                description: Invalid request - Missing newFilePath
+                value:
+                  files:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: ''
+                      newFilePath: Me
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: Me
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: Me
+              Invalid request - Missing filename:
+                description: Invalid request - Missing filename
+                value:
+                  files:
+                    - filePath: ''
+                      newFilePath: Me
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      newFilePath: Me
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      newFilePath: Me
+              Invalid request - Empty files array:
+                description: Invalid request - Empty files array
+                value:
+                  files: []
+              Invalid request - Missing files field:
+                description: Invalid request - Missing files field
+                value: {}
+        required: true
+      responses:
+        '200':
+          description: Files successfully moved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Files successfully moved
+        '400':
+          description: Bad Request (e.g., invalid input data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Invalid request - Incorrect filePath:
+                  description: Invalid request - Incorrect filePath
+                  value:
+                    files[0].filePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filePath:
+                  description: Invalid request - Missing filePath
+                  value:
+                    files[0].filePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing newFilePath:
+                  description: Invalid request - Missing newFilePath
+                  value:
+                    files[0].newFilePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filename:
+                  description: Invalid request - Missing filename
+                  value:
+                    files[0].filename: Filename cannot be empty.
+                Invalid request - Empty files array:
+                  description: Invalid request - Empty files array
+                  value:
+                    files: The list of files cannot be empty.
+                Invalid request - Missing files field:
+                  description: Invalid request - Missing files field
+                  value:
+                    files: The list of files cannot be empty.
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/auth/login:
+    post:
+      tags:
+        - auth
+      summary: User Login
+      description: Authenticates a user using their username and password.
+      operationId: login
+      requestBody:
+        description: User login request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequestDto'
+            examples:
+              Valid Request:
+                description: Valid Request
+                value:
+                  username: user123
+                  password: password123
+              Invalid Request - Missing Username:
+                description: Invalid Request - Missing Username
+                value:
+                  password: password123
+              Invalid Request - Missing Password:
+                description: Invalid Request - Missing Password
+                value:
+                  username: user123
+              Invalid Request - Missing Both Fields:
+                description: Invalid Request - Missing Both Fields
+                value: {}
+        required: true
+      responses:
+        '200':
+          description: User successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: user123
+        '400':
+          description: Bad Request (e.g., missing username or password)
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Missing Username Response:
+                  description: Missing Username Response
+                  value:
+                    username: Username is mandatory
+                Missing Password Response:
+                  description: Missing Password Response
+                  value:
+                    password: Password is mandatory
+                Missing Both Fields Response:
+                  description: Missing Both Fields Response
+                  value:
+                    username: Username is mandatory
+                    password: Password is mandatory
+        '401':
+          description: Unauthorized (invalid credentials)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Invalid username or password
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/folders/{folderName}:
+    delete:
+      tags:
+        - Folders
+      summary: Delete a folder
+      description: Deletes an existing folder belonging to an authenticated user. Also, all previously deleted files that are in the 'deleted' folder will automatically be moved to the root of the 'deleted' folder
+      operationId: deleteFolder
+      parameters:
+        - name: folderName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Folder successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder successful deleted
+        '400':
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties:
+                      type: string
+                  - $ref: '#/components/schemas/MessageResponseDto'
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Folder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder Me1 not found
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+    patch:
+      tags:
+        - Folders
+      summary: Rename a folder
+      description: Rename an existing folder belonging to an authenticated user. Also changes the path of all files deleted from this folder in the 'deleted' folder
+      operationId: renameFolder
+      parameters:
+        - name: folderName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Folder rename request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FolderRenameRequestDto'
+            examples:
+              Valid Request:
+                description: Valid Request
+                value:
+                  newName: videos
+              Empty Request:
+                description: Empty Request
+                value: {}
+              Empty Name:
+                description: Empty Name
+                value:
+                  newName: ''
+        required: true
+      responses:
+        '200':
+          description: Folder successfully renamed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder successful renamed
+        '400':
+          description: Bad Request (e.g., empty new folder name)
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Empty Request:
+                  description: Empty Request
+                  value:
+                    newName: Filename cannot be empty.
+                Empty Name:
+                  description: Empty Name
+                  value:
+                    newName: Filename cannot be empty.
+                Same Names:
+                  description: Same Names
+                  value:
+                    message: Same names
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Folder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder Me1 not found
+        '409':
+          description: Folder renamed already exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder with name=Me already exist
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/folders/color/{folderName}:
+    patch:
+      tags:
+        - Folders
+      summary: Change folder color
+      description: Change the color of an existing folder belonging to an authenticated user.
+      operationId: changeColor
+      parameters:
+        - name: folderName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Folder color change request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FolderChangeColorRequestDto'
+            examples:
+              Valid Request:
+                description: Valid Request
+                value:
+                  newColor: '#ffffff'
+              Empty Request:
+                description: Empty Request
+                value: {}
+              Invalid HEX Code:
+                description: Invalid HEX Code
+                value:
+                  newColor: '#ffffff1'
+        required: true
+      responses:
+        '200':
+          description: Folder color successfully changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder color successful change
+        '400':
+          description: Bad Request (e.g., invalid color format or empty color)
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Empty Request:
+                  description: Empty Request
+                  value:
+                    newColor: File color cannot be empty.
+                Invalid HEX Code:
+                  description: Invalid HEX Code
+                  value:
+                    newColor: 'Color must be a valid HEX code (e.g. #ffffff or #fff).'
+                Empty Color:
+                  description: Empty Color
+                  value:
+                    newColor: File color cannot be empty.
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Folder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Folder Me1 not found
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/{fileName}:
+    patch:
+      tags:
+        - Files
+      summary: Rename a file
+      description: Allows the user to rename a file by providing the current filename and the new filename.
+      operationId: renameFile
+      parameters:
+        - name: fileName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Current filename and new filename details.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileRenameRequestDto'
+            examples:
+              Valid request:
+                description: Valid request
+                value:
+                  filepath: img
+                  newFileName: MediaGet.exe
+              Invalid request - Incorrect filepath:
+                description: Invalid request - Incorrect filepath
+                value:
+                  filepath: /
+                  newFileName: MediaGet.exe
+              Invalid request - Missing filepath:
+                description: Invalid request - Missing filepath
+                value:
+                  newFileName: MediaGet.exe
+              Invalid request - Missing newFileName:
+                description: Invalid request - Missing newFileName
+                value:
+                  filepath: img
+              Invalid request - Empty newFileName:
+                description: Invalid request - Empty newFileName
+                value:
+                  filepath: img
+                  newFileName: ''
+        required: true
+      responses:
+        '200':
+          description: File successfully renamed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: File successfully renamed
+        '400':
+          description: Bad Request (e.g., invalid input data)
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Invalid request - Incorrect filepath:
+                  description: Invalid request - Incorrect filepath
+                  value:
+                    filepath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filepath:
+                  description: Invalid request - Missing filepath
+                  value:
+                    filepath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing newFileName:
+                  description: Invalid request - Missing newFileName
+                  value:
+                    newFileName: Filename cannot be empty.
+                Invalid request - Empty newFileName:
+                  description: Invalid request - Empty newFileName
+                  value:
+                    newFileName: Filename cannot be empty.
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/folders:
+    get:
+      tags:
+        - Folders
+      summary: List all folders
+      description: Retrieve a list of all folders belonging to the authenticated user.
+      operationId: listFolders
+      responses:
+        '200':
+          description: List of folders successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolderResponseDto'
+              example:
+                - name: img1
+                  color: '#ffffff'
+                  size: 99,46MB
+                  filesNumber: '2'
+                - name: Me
+                  color: '#D23434'
+                  size: 22,82MB
+                  filesNumber: '6'
+        '400':
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties:
+                      type: string
+                  - $ref: '#/components/schemas/MessageResponseDto'
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/folders/moved:
+    get:
+      tags:
+        - Folders
+      summary: List folders available for moving files
+      description: Retrieve a list of folders to which files can be moved, belonging to the authenticated user.
+      operationId: listFoldersForMove
+      responses:
+        '200':
+          description: List of folders successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolderForMoveResponseDto'
+              example:
+                - name: img1
+                  color: '#ffffff'
+                - name: Me
+                  color: '#D23434'
+        '400':
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties:
+                      type: string
+                  - $ref: '#/components/schemas/MessageResponseDto'
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files:
+    get:
+      tags:
+        - Files
+      summary: List files and directories
+      description: Gets a list of files and subfolders on the specified path. Each subfolder displays the last change of the file in it and its size
+      operationId: listFilesAndDirectories
+      parameters:
+        - name: path
+          in: query
+          description: Path to the folder in which we want to get the list of subfolders and files.
+          required: false
+          schema:
+            type: string
+          examples:
+            Valid Paths1:
+              description: Valid Paths1
+              value: img/png
+            Valid Paths2:
+              description: Valid Paths2
+              value: files/png/photo
+            Valid Paths:
+              description: Valid Paths
+              value: img
+            Invalid Paths:
+              description: Invalid Paths
+              value: /img/png
+            Invalid Paths1:
+              description: Invalid Paths1
+              value: img/png/
+            Invalid Paths2:
+              description: Invalid Paths2
+              value: img/
+            Invalid Paths3:
+              description: Invalid Paths3
+      responses:
+        '200':
+          description: Successfully retrieved list of files and directories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileAndFolderResponseDto'
+              example:
+                folders:
+                  - name: png
+                    size: 1,64MB
+                    lastModified:
+                      day: '2024-08-15'
+                      time: '11:45:59.390'
+                files:
+                  - filename: MediaGet_id288309ids1s.exe
+                    filePath: img
+                    size: 4,61MB
+                    lastModified:
+                      day: '2024-08-15'
+                      time: '11:45:59.366'
+                    color: null
+                    customFolderName: null
+        '400':
+          description: Bad Request (e.g., invalid path or missing parameter)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Invalid Path Format:
+                  description: Invalid Path Format
+                  value:
+                    message: The path must match the format img, img/png, files/photo/img
+                Missing Parameter:
+                  description: Missing Parameter
+                  value:
+                    message: You forgot to pass the parameter
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+    delete:
+      tags:
+        - Files
+      summary: Delete files
+      description: Deletes specified files from the user's storage.
+      operationId: deleteFiles
+      requestBody:
+        description: List of files to be deleted.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListFilesDeleteRequestDto'
+            examples:
+              Valid request:
+                description: Valid request
+                value:
+                  files:
+                    - filename: example.txt
+                      filePath: docs
+                    - filename: image.img
+                      filePath: img/photo
+                    - filename: hello.txt
+                      filePath: ''
+              Invalid request - Missing filename:
+                description: Invalid request - Missing filename
+                value:
+                  files:
+                    - filePath: img/img
+              Invalid request - Missing filePath:
+                description: Invalid request - Missing filePath
+                value:
+                  files:
+                    - filename: Wallpaper.jpg
+              Invalid request - Empty files array:
+                description: Invalid request - Empty files array
+                value:
+                  files: []
+              Invalid request - Empty body:
+                description: Invalid request - Empty body
+                value: {}
+        required: true
+      responses:
+        '200':
+          description: Files successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: Files successfully deleted
+        '400':
+          description: Bad Request (e.g., invalid input data)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Invalid request - Missing filePath:
+                  description: Invalid request - Missing filePath
+                  value:
+                    files[0].filePath: The path must match the format img, img/png, files/photo/img
+                Invalid request - Missing filename:
+                  description: Invalid request - Missing filename
+                  value:
+                    files[0].filename: Filename cannot be empty.
+                Invalid request - Empty files array:
+                  description: Invalid request - Empty files array
+                  value:
+                    files: The list of files to delete cannot be empty.
+                Invalid request - No files field:
+                  description: Invalid request - No files field
+                  value:
+                    files: The list of files to delete cannot be empty.
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/search:
+    get:
+      tags:
+        - Files
+      summary: Search files by name
+      description: Searches for all files that contain the provided substring in their filenames. If no substring is provided or if it's an empty string, an error will be returned.
+      operationId: searchFileInAllFiles
+      parameters:
+        - name: fileName
+          in: query
+          description: The substring to search for within filenames. If omitted or empty, an error will be returned.
+          required: true
+          schema:
+            type: string
+          example: st
+      responses:
+        '200':
+          description: Files found successfully
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Files containing 'f':
+                  description: Files containing 'f'
+                  value:
+                    - filename: FM24 Increase Realism Megapack JULY UPDATE(05.07.24).zip
+                      filePath: ''
+                      size: 16,12MB
+                      lastModified:
+                        day: '2024-08-14'
+                        time: '09:37:22.726'
+                      color: null
+                      customFolderName: ''
+                    - filename: dmdev_java_roadmap.pdf
+                      filePath: ''
+                      size: 2,70MB
+                      lastModified:
+                        day: '2024-08-14'
+                        time: '20:39:12.849'
+                      color: null
+                      customFolderName: ''
+                Files containing 'st':
+                  description: Files containing 'st'
+                  value:
+                    - filename: EPAM-Code-Instructions.doc
+                      filePath: ''
+                      size: 49,00KB
+                      lastModified:
+                        day: '2024-08-17'
+                        time: '16:58:28.209'
+                      color: null
+                      customFolderName: ''
+                    - filename: SteamSetup1.exe
+                      filePath: files/img
+                      size: 2,27MB
+                      lastModified:
+                        day: '2024-08-17'
+                        time: '16:58:28.271'
+                      color: null
+                      customFolderName: files
+        '400':
+          description: Bad Request (e.g., missing or empty fileName)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Missing fileName parameter:
+                  description: Missing fileName parameter
+                  value:
+                    message: Filename must not be empty
+                Empty fileName parameter:
+                  description: Empty fileName parameter
+                  value:
+                    message: Filename must not be empty
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/memory:
+    get:
+      tags:
+        - Files
+      summary: Get user memory info
+      description: Retrieves memory usage information for the currently authenticated user.
+      operationId: userMemoryInfo
+      responses:
+        '200':
+          description: Memory information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryResponseDto'
+              example:
+                totalSize: 124.01
+                userMemory: 500
+        '400':
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties:
+                      type: string
+                  - $ref: '#/components/schemas/MessageResponseDto'
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/download:
+    get:
+      tags:
+        - Files
+      summary: Download a file
+      description: Downloads a file from the server for an authenticated user. The file is returned as an octet-stream, allowing the user to save it locally.
+      operationId: downloadFile
+      parameters:
+        - name: fileName
+          in: query
+          description: The path to the file to be downloaded, relative to the user's root directory.
+          required: true
+          schema:
+            type: string
+          example: img/exe1/file.txt
+      responses:
+        '200':
+          description: File successfully downloaded
+          headers:
+            Content-Disposition:
+              description: Specifies that the file is an attachment and should be downloaded
+              style: simple
+              schema:
+                type: string
+                example: attachment; filename="file.txt"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+              examples:
+                File Download Response:
+                  description: File Download Response
+                  value: (binary file content)
+        '400':
+          description: Bad Request (e.g., fileName is missing or invalid)
+          content:
+            application/json:
+              schema:
+                type: string
+              example:
+                message: The path must match the format img, img/png, files/photo/img
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                message: File user-Vlad/Me/FM24.zip1 not found
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/deleted:
+    get:
+      tags:
+        - Files
+      summary: List deleted files
+      description: Gets a list of all files in the deleted folder for the current authenticated user.
+      operationId: listFilesInDeleteFolder
+      responses:
+        '200':
+          description: Successfully retrieved list of files
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponseDto'
+              example:
+                - filename: VSCodeUserSetup-x64-1.88.0.exe
+                  filePath: img
+                  size: 94,85MB
+                  lastModified:
+                    day: '2024-08-15'
+                    time: '11:45:59.655'
+                  color: null
+                  customFolderName: null
+                - filename: Wallpaper (2).jpg
+                  filePath: img
+                  size: 464,59KB
+                  lastModified:
+                    day: '2024-08-15'
+                    time: '11:45:59.675'
+                  color: null
+                  customFolderName: null
+        '400':
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties:
+                      type: string
+                  - $ref: '#/components/schemas/MessageResponseDto'
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/deleted/search:
+    get:
+      tags:
+        - Files
+      summary: Search files in the 'deleted' folder by name
+      description: Searches for all files within the 'deleted' folder that contain the provided substring in their filenames. If no substring is provided or if it's an empty string, an error will be returned.
+      operationId: searchFileInDeletedFiles
+      parameters:
+        - name: fileName
+          in: query
+          description: The substring to search for within filenames. If omitted or empty, an error will be returned.
+          required: true
+          schema:
+            type: string
+          example: s
+      responses:
+        '200':
+          description: Files found successfully
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                Files containing 's':
+                  description: Files containing 's'
+                  value:
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      size: 1,64MB
+                      lastModified:
+                        day: '2024-08-17'
+                        time: '15:39:44.092'
+                      color: null
+                      customFolderName: null
+                Files containing 'a':
+                  description: Files containing 'a'
+                  value:
+                    - filename: Wallpaper (2).jpg
+                      filePath: img
+                      size: 464,59KB
+                      lastModified:
+                        day: '2024-08-15'
+                        time: '11:45:59.675'
+                      color: null
+                      customFolderName: null
+                    - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                      filePath: img/png
+                      size: 1,64MB
+                      lastModified:
+                        day: '2024-08-17'
+                        time: '15:39:44.092'
+                      color: null
+                      customFolderName: null
+        '400':
+          description: Bad Request (e.g., missing or empty fileName)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              examples:
+                Missing fileName parameter:
+                  description: Missing fileName parameter
+                  value:
+                    message: Filename must not be empty
+                Empty fileName parameter:
+                  description: Empty fileName parameter
+                  value:
+                    message: Filename must not be empty
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/files/all:
+    get:
+      tags:
+        - Files
+      summary: List all files
+      description: Gets a list of all files (except those in deleted) for the current authenticated user.
+      operationId: listFilesInAllFilesFolder
+      responses:
+        '200':
+          description: Successfully retrieved list of files
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponseDto'
+              example:
+                - filename: ChromeSetup.exe
+                  filePath: ''
+                  size: 1,31MB
+                  lastModified:
+                    day: '2024-08-15'
+                    time: '11:42:08.634'
+                  color: null
+                  customFolderName: ''
+                - filename: EPAM-Code-Instructions.doc
+                  filePath: ''
+                  size: 49,00KB
+                  lastModified:
+                    day: '2024-08-14'
+                    time: '10:19:18.177'
+                  color: null
+                  customFolderName: ''
+                - filename: FM24 Increase Realism Megapack JULY UPDATE(05.07.24).zip
+                  filePath: ''
+                  size: 16,12MB
+                  lastModified:
+                    day: '2024-08-14'
+                    time: '09:37:22.726'
+                  color: null
+                  customFolderName: ''
+                - filename: dmdev_java_roadmap.pdf
+                  filePath: ''
+                  size: 2,70MB
+                  lastModified:
+                    day: '2024-08-14'
+                    time: '20:39:12.849'
+                  color: null
+                  customFolderName: ''
+                - filename: SteamSetup1.exe
+                  filePath: files/img
+                  size: 2,27MB
+                  lastModified:
+                    day: '2024-08-14'
+                    time: '21:40:33.512'
+                  color: null
+                  customFolderName: files
+                - filename: hebirnate.png
+                  filePath: ''
+                  size: 3,55KB
+                  lastModified:
+                    day: '2024-08-12'
+                    time: '12:10:17.646'
+                  color: null
+                  customFolderName: ''
+                - filename: html.png
+                  filePath: ''
+                  size: 3,74KB
+                  lastModified:
+                    day: '2024-08-12'
+                    time: '12:10:17.658'
+                  color: null
+                  customFolderName: ''
+                - filename: MediaGet_id288309ids1s.exe
+                  filePath: img
+                  size: 4,61MB
+                  lastModified:
+                    day: '2024-08-15'
+                    time: '11:45:59.366'
+                  color: '#ffffff'
+                  customFolderName: img
+                - filename: Frame Home-art-scale-2_00x-gigapixel.png
+                  filePath: img/png
+                  size: 1,64MB
+                  lastModified:
+                    day: '2024-08-15'
+                    time: '11:45:59.390'
+                  color: '#ffffff'
+                  customFolderName: img
+                - filename: sql.txt
+                  filePath: ''
+                  size: 2,30KB
+                  lastModified:
+                    day: '2024-08-15'
+                    time: '11:42:08.692'
+                  color: null
+                  customFolderName: ''
+        '400':
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties:
+                      type: string
+                  - $ref: '#/components/schemas/MessageResponseDto'
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+              example:
+                authenticated: 'false'
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+  /api/v1/auth/me:
+    get:
+      tags:
+        - auth
+      summary: Get Authentication Status
+      description: Retrieves the current authentication status and user details.
+      operationId: getAuthStatus
+      responses:
+        '200':
+          description: Successfully retrieved authentication status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponseDto'
+              example:
+                authenticated: true
+                username: user123
+        '400':
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties:
+                      type: string
+                  - $ref: '#/components/schemas/MessageResponseDto'
+        '401':
+          description: Unauthorized (user not authenticated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponseDto'
+              example:
+                authenticated: false
+        '404':
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '409':
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+        '413':
+          description: Payload Too Large
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDto'
+components:
+  schemas:
+    MessageResponseDto:
+      type: object
+      properties:
+        message:
+          type: string
+    UserRegisterRequestDto:
+      required:
+        - password
+        - username
+      type: object
+      properties:
+        username:
+          maxLength: 20
+          minLength: 2
+          pattern: ^[a-zA-Z0-9]+$
+          type: string
+        password:
+          maxLength: 20
+          minLength: 3
+          pattern: ^[a-zA-Z0-9]+$
+          type: string
+    SubFolderRequestDto:
+      required:
+        - name
+      type: object
+      properties:
+        folderPath:
+          type: string
+        name:
+          type: string
+    FolderRequestDto:
+      required:
+        - color
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          pattern: ^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$
+          type: string
+    FileRecoverRequestDto:
+      required:
+        - filename
+      type: object
+      properties:
+        filename:
+          type: string
+        filePath:
+          type: string
+    ListFilesRecoverRequestDto:
+      required:
+        - files
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileRecoverRequestDto'
+    FileMoveRequestDto:
+      required:
+        - files
+      type: object
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileNameRequestDto'
+    FileNameRequestDto:
+      required:
+        - filename
+      type: object
+      properties:
+        filename:
+          type: string
+    FileMoveToPackageRequestDto:
+      required:
+        - filename
+      type: object
+      properties:
+        filename:
+          type: string
+        filePath:
+          type: string
+        newFilePath:
+          type: string
+    ListFilesMoveToPackageRequestDto:
+      required:
+        - files
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileMoveToPackageRequestDto'
+    UserLoginRequestDto:
+      required:
+        - password
+        - username
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    SubFolderRenameRequestDto:
+      type: object
+      properties:
+        oldName:
+          type: string
+        newName:
+          type: string
+    FolderRenameRequestDto:
+      required:
+        - newName
+      type: object
+      properties:
+        newName:
+          type: string
+    FolderChangeColorRequestDto:
+      required:
+        - newColor
+      type: object
+      properties:
+        newColor:
+          pattern: ^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$
+          type: string
+    FileRenameRequestDto:
+      required:
+        - newFileName
+      type: object
+      properties:
+        filepath:
+          type: string
+        newFileName:
+          type: string
+    FolderResponseDto:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+        size:
+          type: string
+        filesNumber:
+          type: string
+    FolderForMoveResponseDto:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+    FileAndFolderResponseDto:
+      type: object
+      properties:
+        folders:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubFolderSizeResponseDto'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileResponseDto'
+    FileResponseDto:
+      type: object
+      properties:
+        filename:
+          type: string
+        filePath:
+          type: string
+        size:
+          type: string
+        lastModified:
+          $ref: '#/components/schemas/TimeResponseDto'
+        color:
+          type: string
+        customFolderName:
+          type: string
+    SubFolderSizeResponseDto:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: string
+        lastModified:
+          $ref: '#/components/schemas/TimeResponseDto'
+    TimeResponseDto:
+      type: object
+      properties:
+        day:
+          type: string
+        time:
+          type: string
+    MemoryResponseDto:
+      type: object
+      properties:
+        totalSize:
+          type: number
+        userMemory:
+          type: integer
+          format: int32
+    StatusResponseDto:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        username:
+          type: string
+    SubFolderDeleteRequestDto:
+      type: object
+      properties:
+        folderPath:
+          type: string
+    FileDeleteRequestDto:
+      required:
+        - filename
+      type: object
+      properties:
+        filename:
+          type: string
+        filePath:
+          type: string
+    ListFilesDeleteRequestDto:
+      required:
+        - files
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileDeleteRequestDto'
